@@ -1,0 +1,442 @@
+<title>Champaran Mart</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    --ink:#1A1523; --muted:#6B6478; --paper:#FFFDF9; --surface:#FFF1EC;
+    --brand:#D6304A; --brand-dark:#9A1B26; --accent:#FFB020; --border:#EFE1DC;
+    --card:#FFFFFF;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#F5F1EC; --muted:#C9C2D6; --paper:#150F19; --surface:#241A22;
+      --brand:#FF6B84; --brand-dark:#FF95A6; --accent:#FFC65C; --border:#3A2C36;
+      --card:#1F1720;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#F5F1EC; --muted:#C9C2D6; --paper:#150F19; --surface:#241A22;
+    --brand:#FF6B84; --brand-dark:#FF95A6; --accent:#FFC65C; --border:#3A2C36;
+    --card:#1F1720;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Manrope',system-ui,sans-serif;
+    line-height:1.6; padding-inline:0;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces',Georgia,serif; font-weight:600;
+    text-wrap:balance; color:var(--ink); margin:0;
+  }
+  a{color:var(--brand);}
+  .wrap{max-width:1040px; margin-inline:auto; padding-inline:20px;}
+  .eyebrow{
+    font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--brand);
+  }
+  .muted{color:var(--muted);}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--brand); color:#fff; font-weight:700;
+    padding:13px 22px; border-radius:10px; text-decoration:none;
+    border:none; cursor:pointer; font-size:15px; font-family:inherit;
+  }
+  .btn.ghost{
+    background:transparent; color:var(--ink); border:1.5px solid var(--border);
+  }
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+  }
+
+  /* Nav */
+  nav{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:20;
+    background:color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--border);
+  }
+  nav .row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-block:14px; gap:16px;
+  }
+  .brand-mark{display:flex; align-items:center; gap:9px; text-decoration:none;}
+  .brand-mark .dot{
+    width:34px; height:34px; border-radius:10px;
+    background:linear-gradient(135deg,var(--accent),var(--brand));
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .brand-mark .dot svg{width:18px;height:18px;}
+  .brand-mark span{font-family:'Fraunces',serif; font-weight:700; font-size:18px; color:var(--ink);}
+  .navlinks{display:flex; gap:26px; list-style:none; margin:0; padding:0;}
+  .navlinks a{
+    color:var(--muted); text-decoration:none; font-weight:700; font-size:14px;
+  }
+  .navlinks a:hover{color:var(--brand);}
+  .navtoggle{display:none;}
+
+  /* Hero */
+  .hero{padding-block:64px 56px;}
+  .hero .row{display:flex; align-items:center; gap:56px;}
+  .hero-copy{flex:1; min-width:280px;}
+  .hero h1{font-size:clamp(32px,5vw,52px); line-height:1.08; margin-top:14px;}
+  .hero p.lede{font-size:17px; color:var(--muted); max-width:46ch; margin-top:16px;}
+  .hero-ctas{display:flex; gap:12px; margin-top:28px; flex-wrap:wrap;}
+  .hero-art{
+    flex:0 0 340px; height:340px; border-radius:26px;
+    background:radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--accent) 35%, var(--paper)), var(--surface) 70%);
+    position:relative; overflow:hidden; border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hero-art svg{width:82%; height:82%;}
+
+  section{padding-block:56px;}
+  .section-head{max-width:60ch; margin-bottom:36px;}
+  .section-head h2{font-size:clamp(24px,3.4vw,34px); margin-top:10px;}
+
+  .features{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  .feature{padding:26px; }
+  .feature .ficon{
+    width:44px; height:44px; border-radius:12px; background:var(--surface);
+    display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+  }
+  .feature .ficon svg{width:22px; height:22px; stroke:var(--brand);}
+  .feature h3{font-size:17px; margin-bottom:8px;}
+  .feature p{color:var(--muted); font-size:14.5px; margin:0;}
+
+  .steps{display:flex; gap:24px; counter-reset:step;}
+  .step{flex:1; position:relative; padding-top:40px;}
+  .step::before{
+    counter-increment:step; content:counter(step);
+    position:absolute; top:0; left:0; width:32px; height:32px; border-radius:50%;
+    background:var(--brand); color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif;
+  }
+  .step h3{font-size:15.5px; margin-bottom:6px;}
+  .step p{color:var(--muted); font-size:14px; margin:0;}
+
+  footer{border-top:1px solid var(--border); padding-block:40px; margin-top:20px;}
+  footer .row{display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap;}
+  footer .col h4{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:12px;}
+  footer .col a{display:block; color:var(--ink); text-decoration:none; font-size:14.5px; margin-bottom:8px; font-weight:600;}
+  footer .col a:hover{color:var(--brand);}
+  footer .bottom{margin-top:32px; padding-top:20px; border-top:1px solid var(--border); font-size:13px; color:var(--muted);}
+
+  .legal{padding-block:48px; border-top:1px solid var(--border);}
+  .legal h2{font-size:26px; margin-top:8px;}
+  .legal h3{font-size:17px; margin-top:28px; margin-bottom:8px;}
+  .legal p, .legal li{color:var(--ink); font-size:15px; max-width:74ch;}
+  .legal ul{padding-left:20px;}
+  .legal .updated{color:var(--muted); font-size:13px; margin-top:6px;}
+
+  .contact-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .contact-card{padding:24px;}
+  .contact-card h3{font-size:15px; margin-bottom:6px;}
+  .contact-card .val{font-weight:700; font-size:16px; word-break:break-word;}
+  .copybtn{
+    margin-top:10px; font-size:12.5px; font-weight:700; color:var(--brand);
+    background:none; border:none; cursor:pointer; padding:0; font-family:inherit;
+  }
+
+  @media (max-width:760px){
+    .navlinks{
+      position:fixed; inset:60px 16px auto 16px; background:var(--card);
+      border:1px solid var(--border); border-radius:14px; padding:14px;
+      flex-direction:column; gap:4px; box-shadow:0 20px 40px rgba(0,0,0,.18);
+      display:none;
+    }
+    .navlinks.open{display:flex;}
+    .navlinks a{padding:10px 8px; border-radius:8px;}
+    .navtoggle{
+      display:flex; width:38px; height:38px; border-radius:9px; border:1px solid var(--border);
+      background:var(--card); align-items:center; justify-content:center; cursor:pointer;
+    }
+    .hero .row{flex-direction:column;}
+    .hero-art{width:100%; flex:none; align-self:stretch;}
+    .features{grid-template-columns:1fr;}
+    .steps{flex-direction:column;}
+    .contact-grid{grid-template-columns:1fr;}
+    footer .row{flex-direction:column;}
+  }
+</style>
+
+<nav>
+  <div class="wrap row">
+    <a href="#top" class="brand-mark">
+      <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L4 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></span>
+      <span>Champaran Mart</span>
+    </a>
+    <button class="navtoggle" id="navToggle" aria-label="Toggle menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <ul class="navlinks" id="navLinks">
+      <li><a href="#top">Home</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#privacy">Privacy Policy</a></li>
+      <li><a href="#terms">Terms</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap row">
+    <div class="hero-copy">
+      <p class="eyebrow">Quick commerce, from your neighbourhood</p>
+      <h1>Fresh groceries,<br>फटाफट delivered.</h1>
+      <p class="lede">Champaran Mart brings rice, vegetables, dairy and daily essentials to your door in minutes &mdash; ordered from an app built for how your area actually shops.</p>
+      <div class="hero-ctas">
+        <a class="btn" href="#contact">Get in touch</a>
+        <a class="btn ghost" href="#how">How it works</a>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="150" cy="286" rx="112" ry="11" fill="#000" opacity=".12"/>
+
+        <!-- leafy bunch -->
+        <g>
+          <ellipse cx="214" cy="118" rx="30" ry="24" fill="#3E8E5B"/>
+          <ellipse cx="236" cy="100" rx="22" ry="20" fill="#4CA467"/>
+          <ellipse cx="200" cy="96" rx="20" ry="18" fill="#4CA467"/>
+          <rect x="205" y="128" width="10" height="26" rx="4" fill="#C7935B"/>
+        </g>
+
+        <!-- carrot -->
+        <g>
+          <path d="M96,150 L118,150 L102,74 Q107,68 100,64 Q93,68 98,74 Z" fill="#F0672B"/>
+          <path d="M97,72 Q88,58 78,54 Q86,66 93,76 Z" fill="#3E8E5B"/>
+          <path d="M101,70 Q101,52 98,40 Q106,54 106,72 Z" fill="#4CA467"/>
+          <path d="M105,73 Q114,60 124,57 Q114,68 109,78 Z" fill="#3E8E5B"/>
+        </g>
+
+        <!-- onion -->
+        <circle cx="129" cy="140" r="19" fill="#8B5FBF"/>
+        <path d="M129,121 Q124,110 129,100 Q134,110 129,121 Z" fill="#A87CD6"/>
+
+        <!-- tomatoes -->
+        <circle cx="168" cy="126" r="24" fill="#D6304A"/>
+        <path d="M168,102 q-6,-8 -14,-6 q6,4 8,10 q3,-3 6,-4 q3,1 6,4 q2,-6 8,-10 q-8,-2 -14,6 Z" fill="#3E8E5B"/>
+        <circle cx="196" cy="146" r="17" fill="#E8536B"/>
+
+        <!-- bag handles -->
+        <path d="M108,150 C108,116 140,116 140,150" fill="none" stroke="#C7935B" stroke-width="7" stroke-linecap="round"/>
+        <path d="M160,150 C160,116 192,116 192,150" fill="none" stroke="#C7935B" stroke-width="7" stroke-linecap="round"/>
+
+        <!-- bag -->
+        <path d="M66,150 L234,150 L254,281 Q150,296 46,281 Z" fill="#EAD1A6"/>
+        <path d="M66,150 L234,150 L238,168 Q150,180 62,168 Z" fill="#DDBD8B"/>
+        <path d="M62,168 Q150,180 238,168 L254,281 Q150,296 46,281 Z" fill="none" stroke="#C7935B" stroke-width="1.5" opacity=".4"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How it works</p>
+      <h2>Order in three steps</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Browse &amp; add</h3>
+        <p>Pick fresh vegetables, groceries and daily essentials from a catalogue built for local shopping.</p>
+      </div>
+      <div class="step">
+        <h3>Confirm delivery details</h3>
+        <p>Use your current location or search an address &mdash; save it for next time.</p>
+      </div>
+      <div class="step">
+        <h3>Track &amp; receive</h3>
+        <p>Follow your order from placed to packed to delivered, right inside the app.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Why Champaran Mart</p>
+      <h2>Built for daily essentials</h2>
+    </div>
+    <div class="features">
+      <div class="feature card">
+        <div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M12 16v6M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M2 12h6M16 12h6M4.9 19.1l4.2-4.2M14.9 9.1l4.2-4.2"/></svg></div>
+        <h3>Fast delivery</h3>
+        <p>Live order tracking with an estimated arrival time, from the moment you place your order.</p>
+      </div>
+      <div class="feature card">
+        <div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg></div>
+        <h3>Everyday essentials</h3>
+        <p>Vegetables, fruit, dairy, grains and household staples, organised the way you actually shop.</p>
+      </div>
+      <div class="feature card">
+        <div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h3>Simple ordering</h3>
+        <p>Save addresses, reorder favourites, and pay cash on delivery &mdash; no complicated checkout.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="legal" id="privacy">
+  <div class="wrap">
+    <p class="eyebrow">Legal</p>
+    <h2>Privacy Policy</h2>
+    <p class="updated">Last updated: 26 September 2026</p>
+
+    <p>This Privacy Policy explains what information the Champaran Mart app collects, how it is used, and the choices you have. It applies to the Champaran Mart customer and admin apps and this website.</p>
+
+    <h3>Information we collect</h3>
+    <ul>
+      <li><strong>Account details</strong> &mdash; your name, email address and phone number, provided when you create an account.</li>
+      <li><strong>Delivery addresses</strong> &mdash; addresses you save (labelled Home, Work, Hotel or Other), including the area, city, pincode and, when provided, a receiver's name and phone number for deliveries to someone else.</li>
+      <li><strong>Location data</strong> &mdash; with your permission, your device's GPS location, used to detect your current location and suggest a delivery address. Location search and address lookup are powered by Mappls (MapmyIndia).</li>
+      <li><strong>Order information</strong> &mdash; items, quantities, prices and order status, so we can fulfil and let you track your orders.</li>
+      <li><strong>Usage data</strong> &mdash; basic app diagnostics needed to keep the service running reliably.</li>
+    </ul>
+
+    <h3>How we use this information</h3>
+    <ul>
+      <li>To create and manage your account and process your orders.</li>
+      <li>To determine delivery addresses and estimate delivery times.</li>
+      <li>To provide customer support when you contact us.</li>
+      <li>To keep the app secure and working correctly.</li>
+    </ul>
+
+    <h3>How we store and share information</h3>
+    <p>Your data is stored using Google Firebase (Authentication, Firestore database and Cloud Storage). We do not sell your personal information. Information is shared only with the Champaran Mart admin team, solely to fulfil and deliver your orders, and with our infrastructure providers (Google Firebase, Mappls) strictly to operate the app.</p>
+
+    <h3>Your choices</h3>
+    <p>You can edit or delete saved addresses at any time inside the app. Location access can be turned off from your device settings; the app will still work, but you will need to search for your address manually. To request deletion of your account and associated data, contact us at the email below.</p>
+
+    <h3>Children's privacy</h3>
+    <p>Champaran Mart is not directed at children under 13, and we do not knowingly collect information from them.</p>
+
+    <h3>Changes to this policy</h3>
+    <p>We may update this Privacy Policy from time to time. Material changes will be reflected on this page with an updated date above.</p>
+
+    <h3>Contact us</h3>
+    <p>Questions about this policy? Write to <a href="mailto:support@champaranmart.com">support@champaranmart.com</a>.</p>
+  </div>
+</section>
+
+<section class="legal" id="terms">
+  <div class="wrap">
+    <p class="eyebrow">Legal</p>
+    <h2>Terms &amp; Conditions</h2>
+    <p class="updated">Last updated: 26 September 2026</p>
+
+    <p>These Terms govern your use of the Champaran Mart app and this website. By placing an order, you agree to these Terms.</p>
+
+    <h3>Orders and pricing</h3>
+    <p>Product prices, availability and delivery times shown in the app are estimates and may change without prior notice. An order is confirmed once it is placed successfully in the app; Champaran Mart reserves the right to cancel an order if an item becomes unavailable.</p>
+
+    <h3>Payment</h3>
+    <p>Orders are currently paid by Cash on Delivery. Additional payment methods may be introduced in future.</p>
+
+    <h3>Delivery</h3>
+    <p>Delivery times shown in the app are estimates, not guarantees, and can vary with distance, traffic and demand. Please ensure your delivery address and contact number are accurate.</p>
+
+    <h3>Cancellations and issues</h3>
+    <p>If an item is missing, incorrect or damaged on delivery, contact us within 24 hours of delivery and we will do our best to resolve it, including a replacement or refund where appropriate.</p>
+
+    <h3>Acceptable use</h3>
+    <p>You agree not to misuse the app, including placing fraudulent orders, attempting to access other users' accounts, or interfering with the app's normal operation.</p>
+
+    <h3>Limitation of liability</h3>
+    <p>Champaran Mart is provided on an "as available" basis. To the extent permitted by law, Champaran Mart is not liable for indirect or incidental losses arising from use of the app.</p>
+
+    <h3>Governing law</h3>
+    <p>These Terms are governed by the laws of India.</p>
+
+    <h3>Changes to these Terms</h3>
+    <p>We may update these Terms from time to time. Continued use of the app after a change means you accept the updated Terms.</p>
+
+    <h3>Contact us</h3>
+    <p>Questions about these Terms? Write to <a href="mailto:support@champaranmart.com">support@champaranmart.com</a>.</p>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Get in touch</p>
+      <h2>Contact Champaran Mart</h2>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-card card">
+        <h3 class="muted">Support email</h3>
+        <div class="val" id="emailVal">support@champaranmart.com</div>
+        <button class="copybtn" onclick="copyText('support@champaranmart.com', this)">Copy email</button>
+      </div>
+      <div class="contact-card card">
+        <h3 class="muted">Phone</h3>
+        <div class="val" id="phoneVal">+91 91281 31544</div>
+        <button class="copybtn" onclick="copyText('+91 91281 31544', this)">Copy number</button>
+      </div>
+      <div class="contact-card card" style="grid-column:1 / -1;">
+        <h3 class="muted">Registered address</h3>
+        <div class="val" style="font-weight:600; font-size:15px; line-height:1.7;">
+          Vill. Motichhapar, Ward No. 03<br>
+          Panchayat &ndash; Lohiyariya, P.O. Chaubeytola, P.S. Kumarbagh<br>
+          Block &ndash; Chanpatiya, District &ndash; West Champaran, Bihar &ndash; 845449
+        </div>
+      </div>
+      <div class="contact-card card">
+        <h3 class="muted">Service area</h3>
+        <div class="val">Champaran &amp; Muzaffarpur region, Bihar</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <div class="col">
+        <a href="#top" class="brand-mark" style="margin-bottom:12px;">
+          <span class="dot" style="width:28px;height:28px;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L4 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></span>
+          <span style="font-size:16px;">Champaran Mart</span>
+        </a>
+        <p class="muted" style="font-size:13.5px; max-width:32ch;">Fresh groceries, फटाफट delivered.</p>
+      </div>
+      <div class="col">
+        <h4>Company</h4>
+        <a href="#how">How it works</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="col">
+        <h4>Legal</h4>
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#terms">Terms &amp; Conditions</a>
+      </div>
+    </div>
+    <div class="bottom">&copy; 2026 Champaran Mart. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+  try{
+    const toggle = document.getElementById('navToggle');
+    const links = document.getElementById('navLinks');
+    toggle.addEventListener('click', () => links.classList.toggle('open'));
+    links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => links.classList.remove('open')));
+  }catch(e){}
+
+  function copyText(text, btn){
+    const done = () => { const old = btn.textContent; btn.textContent = 'Copied!'; setTimeout(()=>btn.textContent = old, 1500); };
+    try{
+      navigator.clipboard.writeText(text).then(done).catch(()=>{
+        const r = document.createRange(); const sel = window.getSelection();
+        const el = document.getElementById('emailVal');
+        r.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(r);
+      });
+    }catch(e){}
+  }
+</script>
