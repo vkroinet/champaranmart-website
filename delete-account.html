@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delete your account &ndash; Champaran Mart</title>
+<meta name="description" content="How to delete your Champaran Mart account and personal data.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+  :root{
+    --ink:#1A1523; --muted:#6B6478; --paper:#FFFDF9; --surface:#FFF1EC;
+    --brand:#D6304A; --brand-dark:#9A1B26; --accent:#FFB020; --border:#EFE1DC;
+    --card:#FFFFFF;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#F5F1EC; --muted:#C9C2D6; --paper:#150F19; --surface:#241A22;
+      --brand:#FF6B84; --brand-dark:#FF95A6; --accent:#FFC65C; --border:#3A2C36;
+      --card:#1F1720;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#F5F1EC; --muted:#C9C2D6; --paper:#150F19; --surface:#241A22;
+    --brand:#FF6B84; --brand-dark:#FF95A6; --accent:#FFC65C; --border:#3A2C36;
+    --card:#1F1720;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Manrope',system-ui,sans-serif;
+    line-height:1.6; padding-inline:0;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces',Georgia,serif; font-weight:600;
+    text-wrap:balance; color:var(--ink); margin:0;
+  }
+  a{color:var(--brand);}
+  .wrap{max-width:1040px; margin-inline:auto; padding-inline:20px;}
+  .eyebrow{
+    font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--brand);
+  }
+  .muted{color:var(--muted);}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--brand); color:#fff; font-weight:700;
+    padding:13px 22px; border-radius:10px; text-decoration:none;
+    border:none; cursor:pointer; font-size:15px; font-family:inherit;
+  }
+  .btn.ghost{
+    background:transparent; color:var(--ink); border:1.5px solid var(--border);
+  }
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+  }
+
+  /* Nav */
+  nav{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:20;
+    background:color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--border);
+  }
+  nav .row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-block:14px; gap:16px;
+  }
+  .brand-mark{display:flex; align-items:center; gap:9px; text-decoration:none;}
+  .brand-mark .dot{
+    width:34px; height:34px; border-radius:10px;
+    background:linear-gradient(135deg,var(--accent),var(--brand));
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .brand-mark .dot svg{width:18px;height:18px;}
+  .brand-mark span{font-family:'Fraunces',serif; font-weight:700; font-size:18px; color:var(--ink);}
+  .navlinks{display:flex; gap:26px; list-style:none; margin:0; padding:0;}
+  .navlinks a{
+    color:var(--muted); text-decoration:none; font-weight:700; font-size:14px;
+  }
+  .navlinks a:hover{color:var(--brand);}
+  .navtoggle{display:none;}
+
+  /* Hero */
+  .hero{padding-block:64px 56px;}
+  .hero .row{display:flex; align-items:center; gap:56px;}
+  .hero-copy{flex:1; min-width:280px;}
+  .hero h1{font-size:clamp(32px,5vw,52px); line-height:1.08; margin-top:14px;}
+  .hero p.lede{font-size:17px; color:var(--muted); max-width:46ch; margin-top:16px;}
+  .hero-ctas{display:flex; gap:12px; margin-top:28px; flex-wrap:wrap;}
+  .hero-art{
+    flex:0 0 340px; height:340px; border-radius:26px;
+    background:radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--accent) 35%, var(--paper)), var(--surface) 70%);
+    position:relative; overflow:hidden; border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hero-art svg{width:82%; height:82%;}
+
+  section{padding-block:56px;}
+  .section-head{max-width:60ch; margin-bottom:36px;}
+  .section-head h2{font-size:clamp(24px,3.4vw,34px); margin-top:10px;}
+
+  .features{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  .feature{padding:26px; }
+  .feature .ficon{
+    width:44px; height:44px; border-radius:12px; background:var(--surface);
+    display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+  }
+  .feature .ficon svg{width:22px; height:22px; stroke:var(--brand);}
+  .feature h3{font-size:17px; margin-bottom:8px;}
+  .feature p{color:var(--muted); font-size:14.5px; margin:0;}
+
+  .steps{display:flex; gap:24px; counter-reset:step;}
+  .step{flex:1; position:relative; padding-top:40px;}
+  .step::before{
+    counter-increment:step; content:counter(step);
+    position:absolute; top:0; left:0; width:32px; height:32px; border-radius:50%;
+    background:var(--brand); color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif;
+  }
+  .step h3{font-size:15.5px; margin-bottom:6px;}
+  .step p{color:var(--muted); font-size:14px; margin:0;}
+
+  footer{border-top:1px solid var(--border); padding-block:40px; margin-top:20px;}
+  footer .row{display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap;}
+  footer .col h4{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:12px;}
+  footer .col a{display:block; color:var(--ink); text-decoration:none; font-size:14.5px; margin-bottom:8px; font-weight:600;}
+  footer .col a:hover{color:var(--brand);}
+  footer .bottom{margin-top:32px; padding-top:20px; border-top:1px solid var(--border); font-size:13px; color:var(--muted);}
+
+  .legal{padding-block:48px; border-top:1px solid var(--border);}
+  .legal h2{font-size:26px; margin-top:8px;}
+  .legal h3{font-size:17px; margin-top:28px; margin-bottom:8px;}
+  .legal p, .legal li{color:var(--ink); font-size:15px; max-width:74ch;}
+  .legal ul{padding-left:20px;}
+  .legal .updated{color:var(--muted); font-size:13px; margin-top:6px;}
+
+  .contact-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .contact-card{padding:24px;}
+  .contact-card h3{font-size:15px; margin-bottom:6px;}
+  .contact-card .val{font-weight:700; font-size:16px; word-break:break-word;}
+  .copybtn{
+    margin-top:10px; font-size:12.5px; font-weight:700; color:var(--brand);
+    background:none; border:none; cursor:pointer; padding:0; font-family:inherit;
+  }
+
+  @media (max-width:760px){
+    .navlinks{
+      position:fixed; inset:60px 16px auto 16px; background:var(--card);
+      border:1px solid var(--border); border-radius:14px; padding:14px;
+      flex-direction:column; gap:4px; box-shadow:0 20px 40px rgba(0,0,0,.18);
+      display:none;
+    }
+    .navlinks.open{display:flex;}
+    .navlinks a{padding:10px 8px; border-radius:8px;}
+    .navtoggle{
+      display:flex; width:38px; height:38px; border-radius:9px; border:1px solid var(--border);
+      background:var(--card); align-items:center; justify-content:center; cursor:pointer;
+    }
+    .hero .row{flex-direction:column;}
+    .hero-art{width:100%; flex:none; align-self:stretch;}
+    .features{grid-template-columns:1fr;}
+    .steps{flex-direction:column;}
+    .contact-grid{grid-template-columns:1fr;}
+    footer .row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap row">
+    <a href="index.html" class="brand-mark"><span>Champaran Mart</span></a>
+    <ul class="navlinks" style="display:flex;gap:18px;list-style:none;margin:0;padding:0;">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="privacy-policy.html">Privacy Policy</a></li>
+      <li><a href="delete-account.html">Delete account</a></li>
+    </ul>
+  </div>
+</nav>
+<section class="legal" style="border-top:none;">
+  <div class="wrap">
+    <p class="eyebrow">Account</p>
+    <h2>Delete your Champaran Mart account</h2>
+    <p class="updated">Last updated: 12 October 2026 &middot; अपना अकाउंट डिलीट करने का तरीका</p>
+
+    <h3>Option 1: In the app</h3>
+    <ol>
+      <li>Open the Champaran Mart app and log in.</li>
+      <li>Go to <strong>Profile &rarr; Account privacy</strong>.</li>
+      <li>Tick &ldquo;I understand, delete my account&rdquo;, tap <strong>Delete my account</strong>, and confirm.</li>
+    </ol>
+    <p>Your account is deleted straight away.</p>
+
+    <h3>Option 2: Without the app</h3>
+    <p>Send us the <strong>mobile number you registered with</strong> and the words &ldquo;Delete my account&rdquo;:</p>
+    <ul>
+      <li>Email: <a href="mailto:support@champaranmart.com?subject=Delete%20my%20account">support@champaranmart.com</a></li>
+      <li>Phone / WhatsApp: <a href="tel:+919128131544">+91 91281 31544</a></li>
+    </ul>
+    <p>We will check that the request is from you and delete the account within <strong>7 days</strong>.</p>
+
+    <h3>What is deleted</h3>
+    <ul>
+      <li>Your name, phone number and saved addresses</li>
+      <li>Your cart and saved details</li>
+      <li>Your login, and your profile photo if you added one</li>
+    </ul>
+
+    <h3>What is kept</h3>
+    <p>Your past orders stay in the shop's records for accounting, but <strong>without your name, phone number, address or location</strong>, so they can no longer be linked to you. If you have an order that is still on its way, the account can be deleted once it has been delivered. Payments made through Razorpay are also recorded by Razorpay under its own policy.</p>
+
+    <p>See also our <a href="privacy-policy.html">Privacy Policy</a>.</p>
+    <p class="muted" style="font-size:13.5px;">Champaran Mart &ndash; Nitesh Kumar, Vill. Motichhapar, Ward No. 03, Panchayat &ndash; Lohiyariya, P.O. Chaubeytola, P.S. Kumarbagh, Block &ndash; Chanpatiya, District &ndash; West Champaran, Bihar &ndash; 845449</p>
+  </div>
+</section>
+<footer>
+  <div class="wrap">
+    <div class="bottom">&copy; 2026 Champaran Mart. All rights reserved. &middot; <a href="index.html#contact">Contact</a> &middot; <a href="index.html#terms">Terms</a></div>
+  </div>
+</footer>
+</body>
+</html>
