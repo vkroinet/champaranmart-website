@@ -197,12 +197,42 @@
     .contact-grid{grid-template-columns:1fr;}
     footer .row{flex-direction:column;}
   }
+
+  /* App screens */
+  .shots{
+    display:flex; gap:22px; margin-top:8px; padding-block:8px 20px;
+    overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+  }
+  .shot{flex:0 0 188px; margin:0; scroll-snap-align:start; display:flex; flex-direction:column; gap:14px; min-width:0;}
+  .shot-device{
+    background:#231E2A; border-radius:30px; padding:8px;
+    box-shadow:0 14px 30px rgba(26,21,35,.16);
+  }
+  .shot-device img{
+    display:block; width:100%; height:auto; aspect-ratio:9/19.8; object-fit:cover; object-position:top;
+    border-radius:22px; background:var(--card);
+  }
+  .shot-cap{display:flex; gap:10px; align-items:baseline; padding-inline:4px;}
+  .shot-num{
+    flex:none; width:24px; height:24px; border-radius:50%;
+    background:var(--surface); color:var(--brand);
+    font-weight:800; font-size:12px; display:grid; place-items:center;
+  }
+  .shot-cap b{display:block; font-size:15px; line-height:1.25;}
+  .shot-cap span:not(.shot-num){display:block; font-size:13px; color:var(--muted); line-height:1.4; margin-top:2px;}
+  .store-badge{
+    margin-top:24px; display:inline-flex; flex-direction:column; gap:2px;
+    background:var(--ink); color:var(--paper); padding:10px 22px; border-radius:10px;
+  }
+  .store-badge small{font-size:10.5px; letter-spacing:.12em; font-weight:700; opacity:.8;}
+  .store-badge strong{font-size:15px;}
+  @media (min-width:1000px){ .shots{overflow-x:visible;} }
 </style>
 
 <nav>
   <div class="wrap row">
     <a href="#top" class="brand-mark">
-      <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L4 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></span>
+      <span class="dot"><img src="favicon-96.png" alt="" style="width:100%;height:100%;display:block;border-radius:inherit"></span>
       <span>Champaran Mart</span>
     </a>
     <button class="navtoggle" id="navToggle" aria-label="Toggle menu">
@@ -211,6 +241,7 @@
     <ul class="navlinks" id="navLinks">
       <li><a href="#top">Home</a></li>
       <li><a href="#how">How it works</a></li>
+      <li><a href="#app">The app</a></li>
       <li><a href="#privacy">Privacy Policy</a></li>
       <li><a href="#terms">Terms</a></li>
       <li><a href="#shipping">Shipping Policy</a></li>
@@ -231,42 +262,48 @@
       </div>
     </div>
     <div class="hero-art" aria-hidden="true">
-      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="150" cy="286" rx="112" ry="11" fill="#000" opacity=".12"/>
-
-        <!-- leafy bunch -->
-        <g>
-          <ellipse cx="214" cy="118" rx="30" ry="24" fill="#3E8E5B"/>
-          <ellipse cx="236" cy="100" rx="22" ry="20" fill="#4CA467"/>
-          <ellipse cx="200" cy="96" rx="20" ry="18" fill="#4CA467"/>
-          <rect x="205" y="128" width="10" height="26" rx="4" fill="#C7935B"/>
+      <svg viewBox="0 0 108 124" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="logoBg" cx="0.5" cy="0.4" r="0.76"><stop offset="0" stop-color="#FFB020"/><stop offset="1" stop-color="#D6304A"/></radialGradient>
+          <clipPath id="logoClip"><circle cx="54" cy="54" r="54"/></clipPath>
+        </defs>
+        <ellipse cx="54" cy="116" rx="40" ry="5" fill="#000" opacity=".14"/>
+        <g clip-path="url(#logoClip)">
+          <rect width="108" height="108" fill="url(#logoBg)"/>
+          <path d="M44,60 Q30,46 18,52 Q26,64 44,60 Z" fill="#2FA84F"/>
+          <path d="M64,60 Q78,46 90,52 Q82,64 64,60 Z" fill="#2FA84F"/>
+          <path d="M40,56 Q30,38 20,38 Q22,52 40,56 Z" fill="#45C06A"/>
+          <path d="M68,56 Q78,38 88,38 Q86,52 68,56 Z" fill="#45C06A"/>
+          <path d="M47,45 Q38,28 26,29 Q28,42 47,45 Z" fill="#2FA84F"/>
+          <path d="M62,43 Q72,25 85,27 Q83,41 62,43 Z" fill="#2FA84F"/>
+          <path d="M54,42 Q47,28 55,19 Q63,29 54,42 Z" fill="#45C06A"/>
+          <g stroke="#1D7A38" stroke-width="1" stroke-linecap="round" fill="none">
+            <path d="M44,60 Q31,54 21,53"/><path d="M64,60 Q77,54 87,53"/><path d="M40,56 Q31,46 23,40"/>
+            <path d="M68,56 Q77,46 85,40"/><path d="M47,45 Q39,37 31,31"/><path d="M62,43 Q72,35 80,29"/><path d="M54,42 Q53,32 55,24"/>
+          </g>
+          <path d="M30,55 L78,55 L73,83 Q73,85 71,85 L37,85 Q35,85 35,83 Z" fill="#FFFFFF"/>
+          <path d="M30,55 L78,55 L76,60 L32,60 Z" fill="#F5A623"/>
+          <circle cx="37" cy="47" r="11.5" fill="#FF9A1F" stroke="#FFFFFF" stroke-width="1.6"/>
+          <ellipse cx="33.5" cy="43" rx="4" ry="2.6" fill="#FFD58A" opacity="0.75" transform="rotate(-30 33.5 43)"/>
+          <circle cx="37" cy="36.6" r="1.3" fill="#7A4A12"/>
+          <path d="M37.5,36.4 Q41,31 46.5,33 Q43.5,38.2 37.5,36.4 Z" fill="#3DBE5C"/>
+          <path d="M72.5,37 L72.5,30" stroke="#6B4A2B" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <path d="M72.5,31.5 Q78,27 83,30.5 Q78,34.5 72.5,31.5 Z" fill="#3DBE5C"/>
+          <g fill="#2F3F9E" stroke="#FFFFFF" stroke-width="1.1">
+            <circle cx="65.5" cy="41.5" r="4.9"/><circle cx="72.5" cy="41.5" r="4.9"/><circle cx="79.5" cy="41.5" r="4.9"/>
+            <circle cx="69" cy="48" r="4.9"/><circle cx="76" cy="48" r="4.9"/><circle cx="72.5" cy="54.5" r="4.9"/>
+          </g>
+          <g fill="#8FA2F0" opacity="0.75">
+            <circle cx="64" cy="40" r="1.1"/><circle cx="71" cy="40" r="1.1"/><circle cx="78" cy="40" r="1.1"/>
+            <circle cx="67.5" cy="46.5" r="1.1"/><circle cx="74.5" cy="46.5" r="1.1"/><circle cx="71" cy="53" r="1.1"/>
+          </g>
+          <g transform="rotate(-25 54 50)">
+            <path d="M38.5,50 L41.5,48.6 Q43,39.5 54,39.5 Q65,39.5 66.5,48.6 L69.5,50 L66.5,51.4 Q65,60.5 54,60.5 Q43,60.5 41.5,51.4 Z" fill="#FFE23F" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
+            <ellipse cx="49" cy="45" rx="4.2" ry="2.2" fill="#FFF6B0" opacity="0.9"/>
+            <g fill="#E3BE20"><circle cx="52" cy="54" r="0.7"/><circle cx="58" cy="50" r="0.7"/><circle cx="55" cy="46" r="0.7"/><circle cx="47" cy="52" r="0.7"/><circle cx="60" cy="55" r="0.7"/></g>
+          </g>
+          <path d="M58,42 Q62,35 68.5,37.5 Q64.5,44 58,42 Z" fill="#2FA84F" stroke="#FFFFFF" stroke-width="0.8"/>
         </g>
-
-        <!-- carrot -->
-        <g>
-          <path d="M96,150 L118,150 L102,74 Q107,68 100,64 Q93,68 98,74 Z" fill="#F0672B"/>
-          <path d="M97,72 Q88,58 78,54 Q86,66 93,76 Z" fill="#3E8E5B"/>
-          <path d="M101,70 Q101,52 98,40 Q106,54 106,72 Z" fill="#4CA467"/>
-          <path d="M105,73 Q114,60 124,57 Q114,68 109,78 Z" fill="#3E8E5B"/>
-        </g>
-
-        <!-- onion -->
-        <circle cx="129" cy="140" r="19" fill="#8B5FBF"/>
-        <path d="M129,121 Q124,110 129,100 Q134,110 129,121 Z" fill="#A87CD6"/>
-
-        <!-- tomatoes -->
-        <circle cx="168" cy="126" r="24" fill="#D6304A"/>
-        <path d="M168,102 q-6,-8 -14,-6 q6,4 8,10 q3,-3 6,-4 q3,1 6,4 q2,-6 8,-10 q-8,-2 -14,6 Z" fill="#3E8E5B"/>
-        <circle cx="196" cy="146" r="17" fill="#E8536B"/>
-
-        <!-- bag handles -->
-        <path d="M108,150 C108,116 140,116 140,150" fill="none" stroke="#C7935B" stroke-width="7" stroke-linecap="round"/>
-        <path d="M160,150 C160,116 192,116 192,150" fill="none" stroke="#C7935B" stroke-width="7" stroke-linecap="round"/>
-
-        <!-- bag -->
-        <path d="M66,150 L234,150 L254,281 Q150,296 46,281 Z" fill="#EAD1A6"/>
-        <path d="M66,150 L234,150 L238,168 Q150,180 62,168 Z" fill="#DDBD8B"/>
-        <path d="M62,168 Q150,180 238,168 L254,281 Q150,296 46,281 Z" fill="none" stroke="#C7935B" stroke-width="1.5" opacity=".4"/>
       </svg>
     </div>
   </div>
@@ -292,6 +329,39 @@
         <p>Follow your order from placed to packed to delivered, right inside the app.</p>
       </div>
     </div>
+  </div>
+</section>
+
+<section id="app">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">The app</p>
+      <h2>Order in a few taps</h2>
+      <p class="muted" style="margin:12px 0 0;">From opening Champaran Mart to choosing how fast it arrives &mdash; real screens from the app, in the order you see them.</p>
+    </div>
+    <div class="shots" role="list" aria-label="App screens in order">
+      <figure class="shot" role="listitem">
+        <div class="shot-device"><img src="screens/app-1-splash.jpg" width="371" height="793" loading="lazy" alt="Champaran Mart opening screen with the basket logo on red"></div>
+        <figcaption class="shot-cap"><span class="shot-num">1</span><div><b>Open</b><span>Fresh groceries, फटाफट delivered</span></div></figcaption>
+      </figure>
+      <figure class="shot" role="listitem">
+        <div class="shot-device"><img src="screens/app-2-home.jpg" width="376" height="835" loading="lazy" alt="Home screen with delivery time, search and grocery categories"></div>
+        <figcaption class="shot-cap"><span class="shot-num">2</span><div><b>Browse</b><span>Search or pick a category</span></div></figcaption>
+      </figure>
+      <figure class="shot" role="listitem">
+        <div class="shot-device"><img src="screens/app-3-products.jpg" width="374" height="834" loading="lazy" alt="Vegetables list with prices and Add buttons"></div>
+        <figcaption class="shot-cap"><span class="shot-num">3</span><div><b>Pick items</b><span>Prices and savings at a glance</span></div></figcaption>
+      </figure>
+      <figure class="shot" role="listitem">
+        <div class="shot-device"><img src="screens/app-4-cart.jpg" width="374" height="836" loading="lazy" alt="Cart with the bill details and a Checkout button"></div>
+        <figcaption class="shot-cap"><span class="shot-num">4</span><div><b>Check the bill</b><span>Every charge shown before you pay</span></div></figcaption>
+      </figure>
+      <figure class="shot" role="listitem">
+        <div class="shot-device"><img src="screens/app-5-checkout.jpg" width="720" height="1600" loading="lazy" alt="Checkout with Standard or Express delivery and UPI payment options"></div>
+        <figcaption class="shot-cap"><span class="shot-num">5</span><div><b>Choose delivery</b><span>Standard or Express, pay by UPI or cash</span></div></figcaption>
+      </figure>
+    </div>
+    <div class="store-badge" aria-label="Google Play, coming soon"><small>GET IT ON</small><strong>Google Play &middot; coming soon</strong></div>
   </div>
 </section>
 
@@ -494,7 +564,7 @@
     <div class="row">
       <div class="col">
         <a href="#top" class="brand-mark" style="margin-bottom:12px;">
-          <span class="dot" style="width:28px;height:28px;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L4 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></span>
+          <span class="dot" style="width:28px;height:28px;"><img src="favicon-96.png" alt="" style="width:100%;height:100%;display:block;border-radius:inherit"></span>
           <span style="font-size:16px;">Champaran Mart</span>
         </a>
         <p class="muted" style="font-size:13.5px; max-width:32ch;">Fresh groceries, फटाफट delivered.</p>
