@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Champaran Mart app icon, full square (no rounded corners — Google Play and Android round it themselves).
+     Use this for the Play Store listing: export it as a 512 x 512 PNG (32-bit, under 1 MB).
+     Same artwork as app/src/main/res/drawable/ic_launcher_foreground.xml. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.4" r="0.76">
+      <stop offset="0" stop-color="#FFB020"/>
+      <stop offset="1" stop-color="#D6304A"/>
+    </radialGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#bg)"/>
+  <g transform="translate(54 54) scale(0.95) translate(-54 -54)">
+    <path d="M44,60 Q30,46 18,52 Q26,64 44,60 Z" fill="#2FA84F"/>
+    <path d="M64,60 Q78,46 90,52 Q82,64 64,60 Z" fill="#2FA84F"/>
+    <path d="M40,56 Q30,38 20,38 Q22,52 40,56 Z" fill="#45C06A"/>
+    <path d="M68,56 Q78,38 88,38 Q86,52 68,56 Z" fill="#45C06A"/>
+    <path d="M47,45 Q38,28 26,29 Q28,42 47,45 Z" fill="#2FA84F"/>
+    <path d="M62,43 Q72,25 85,27 Q83,41 62,43 Z" fill="#2FA84F"/>
+    <path d="M54,42 Q47,28 55,19 Q63,29 54,42 Z" fill="#45C06A"/>
+    <g stroke="#1D7A38" stroke-width="1" stroke-linecap="round" fill="none">
+      <path d="M44,60 Q31,54 21,53"/>
+      <path d="M64,60 Q77,54 87,53"/>
+      <path d="M40,56 Q31,46 23,40"/>
+      <path d="M68,56 Q77,46 85,40"/>
+      <path d="M47,45 Q39,37 31,31"/>
+      <path d="M62,43 Q72,35 80,29"/>
+      <path d="M54,42 Q53,32 55,24"/>
+    </g>
+    <path d="M30,55 L78,55 L73,83 Q73,85 71,85 L37,85 Q35,85 35,83 Z" fill="#FFFFFF"/>
+    <path d="M30,55 L78,55 L76,60 L32,60 Z" fill="#F5A623"/>
+    <circle cx="37" cy="47" r="11.5" fill="#FF9A1F" stroke="#FFFFFF" stroke-width="1.6"/>
+    <ellipse cx="33.5" cy="43" rx="4" ry="2.6" fill="#FFD58A" opacity="0.75" transform="rotate(-30 33.5 43)"/>
+    <circle cx="37" cy="36.6" r="1.3" fill="#7A4A12"/>
+    <path d="M37.5,36.4 Q41,31 46.5,33 Q43.5,38.2 37.5,36.4 Z" fill="#3DBE5C"/>
+    <path d="M72.5,37 L72.5,30" stroke="#6B4A2B" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path d="M72.5,31.5 Q78,27 83,30.5 Q78,34.5 72.5,31.5 Z" fill="#3DBE5C"/>
+    <g fill="#2F3F9E" stroke="#FFFFFF" stroke-width="1.1">
+      <circle cx="65.5" cy="41.5" r="4.9"/><circle cx="72.5" cy="41.5" r="4.9"/><circle cx="79.5" cy="41.5" r="4.9"/>
+      <circle cx="69" cy="48" r="4.9"/><circle cx="76" cy="48" r="4.9"/><circle cx="72.5" cy="54.5" r="4.9"/>
+    </g>
+    <g fill="#8FA2F0" opacity="0.75">
+      <circle cx="64" cy="40" r="1.1"/><circle cx="71" cy="40" r="1.1"/><circle cx="78" cy="40" r="1.1"/>
+      <circle cx="67.5" cy="46.5" r="1.1"/><circle cx="74.5" cy="46.5" r="1.1"/><circle cx="71" cy="53" r="1.1"/>
+    </g>
+    <g transform="rotate(-25 54 50)">
+      <path d="M38.5,50 L41.5,48.6 Q43,39.5 54,39.5 Q65,39.5 66.5,48.6 L69.5,50 L66.5,51.4 Q65,60.5 54,60.5 Q43,60.5 41.5,51.4 Z" fill="#FFE23F" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
+      <ellipse cx="49" cy="45" rx="4.2" ry="2.2" fill="#FFF6B0" opacity="0.9"/>
+      <g fill="#E3BE20"><circle cx="52" cy="54" r="0.7"/><circle cx="58" cy="50" r="0.7"/><circle cx="55" cy="46" r="0.7"/><circle cx="47" cy="52" r="0.7"/><circle cx="60" cy="55" r="0.7"/></g>
+    </g>
+    <path d="M58,42 Q62,35 68.5,37.5 Q64.5,44 58,42 Z" fill="#2FA84F" stroke="#FFFFFF" stroke-width="0.8"/>
+  </g>
+</svg>
