@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,7 +8,7 @@
 <link rel="icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
 <style>
   :root{
     --ink:#1A1523; --muted:#6B6478; --paper:#FFFDF9; --surface:#FFF1EC;
@@ -23,14 +23,14 @@
     }
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Manrope',system-ui,sans-serif;font-size:15px;line-height:1.5;min-height:100vh}
-  h1{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:26px;margin:0 0 2px;text-wrap:balance}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Poppins',system-ui,sans-serif;font-size:15px;line-height:1.5;min-height:100vh}
+  h1{font-family:'Poppins',system-ui,sans-serif;font-weight:600;font-size:26px;margin:0 0 2px;text-wrap:balance}
   .wrap{max-width:1120px;margin:0 auto;padding-inline:16px}
   nav{border-bottom:1px solid var(--border)}
   nav .row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}
   .brand-mark{display:flex;align-items:center;gap:9px;text-decoration:none}
   .brand-mark img{width:34px;height:34px;border-radius:50%}
-  .brand-mark span{font-family:'Fraunces',serif;font-weight:700;font-size:18px;color:var(--ink)}
+  .brand-mark span{font-family:'Poppins',system-ui,sans-serif;font-weight:700;font-size:18px;color:var(--ink)}
   .navlinks{display:flex;gap:22px;list-style:none;margin:0;padding:0;align-items:center}
   .navlinks a{color:var(--muted);text-decoration:none;font-weight:700;font-size:14px}
   .navlinks a:hover{color:var(--brand)}
@@ -76,26 +76,26 @@
 <div class="page">
   <div class="card">
     <h1>Welcome back</h1>
-    <p class="sub">Apne account me login karo.</p>
+    <p class="sub">Sign in to your account.</p>
 
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="tab-admin" aria-selected="true" aria-controls="p-admin" type="button">Admin</button>
-      <button class="tab" role="tab" id="tab-cust" aria-selected="false" aria-controls="p-cust" type="button">Customer <span class="soon">jald</span></button>
+      <button class="tab" role="tab" id="tab-cust" aria-selected="false" aria-controls="p-cust" type="button">Customer <span class="soon">soon</span></button>
     </div>
 
     <form id="p-admin" role="tabpanel" aria-labelledby="tab-admin" novalidate>
       <div class="field"><label for="em">Email</label><input id="em" type="email" autocomplete="username" placeholder="admin@champaranmart.com"></div>
       <div class="field"><label for="pw">Password</label>
-        <div class="pw"><input id="pw" type="password" autocomplete="current-password" placeholder="Password"><button class="eye" type="button" id="eye" aria-label="Password dikhao">Dikhao</button></div></div>
-      <div class="links"><span></span><button type="button" id="forgot">Password bhool gaye?</button></div>
+        <div class="pw"><input id="pw" type="password" autocomplete="current-password" placeholder="Password"><button class="eye" type="button" id="eye" aria-label="Show password">Show</button></div></div>
+      <div class="links"><span></span><button type="button" id="forgot">Forgot password?</button></div>
       <p class="msg" id="msg" role="alert"></p>
-      <button class="btn" id="go" type="submit">Admin login</button>
+      <button class="btn" id="go" type="submit">Log in</button>
     </form>
 
     <div id="p-cust" role="tabpanel" aria-labelledby="tab-cust" hidden>
       <div class="field"><label for="ph">Mobile number</label><input id="ph" type="tel" inputmode="tel" placeholder="+91 98765 43210" disabled></div>
-      <button class="btn" type="button" disabled>OTP bhejo</button>
-      <p class="note">Customer login website par jald aayega. Abhi app se order karo.</p>
+      <button class="btn" type="button" disabled>Send OTP</button>
+      <p class="note">Customer login is coming soon to the website. For now, please order from the app.</p>
     </div>
   </div>
 </div>
@@ -119,19 +119,19 @@ $("tab-cust").onclick = () => tab(false);
 $("eye").onclick = () => {
   const show = $("pw").type === "password";
   $("pw").type = show ? "text" : "password";
-  $("eye").textContent = show ? "Chhupao" : "Dikhao";
+  $("eye").textContent = show ? "Hide" : "Show";
 };
 $("em").oninput = $("pw").oninput = () => say("");
 
 function friendly(e) {
   const c = (e && e.code) || "";
-  if (c === "auth/invalid-email") return "Email sahi nahi hai. Dobara check karo.";
-  if (["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-login-credentials"].includes(c)) return "Email ya password galat hai. Dobara try karo.";
-  if (c === "auth/too-many-requests") return "Bahut zyada koshish ho gayi. Thodi der baad try karo.";
-  if (c === "auth/network-request-failed") return "Internet nahi chal raha. Check karke dobara try karo.";
-  if (c === "auth/api-key-not-valid" || c === "auth/invalid-api-key") return "Website ka Firebase setup poora nahi hai. Developer se baat karo.";
-  if (c === "auth/unauthorized-domain") return "Ye website Firebase me allow nahi hai (Authorized domains me champaranmart.com jodo).";
-  return "Login nahi ho paya. Dobara try karo.";
+  if (c === "auth/invalid-email") return "Enter a valid email address.";
+  if (["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-login-credentials"].includes(c)) return "Incorrect email or password. Please try again.";
+  if (c === "auth/too-many-requests") return "Too many attempts. Please try again in a few minutes.";
+  if (c === "auth/network-request-failed") return "No internet connection. Check your network and try again.";
+  if (c === "auth/api-key-not-valid" || c === "auth/invalid-api-key") return "This website's Firebase setup is incomplete. Please contact the developer.";
+  if (c === "auth/unauthorized-domain") return "This website isn't authorized in Firebase.";
+  return "Couldn't log in. Please try again.";
 }
 
 async function isAdmin(uid) {
@@ -142,42 +142,42 @@ async function isAdmin(uid) {
 $("p-admin").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const email = $("em").value.trim(), pass = $("pw").value;
-  if (!email) return say("Email daalo.");
-  if (!/^\S+@\S+\.\S+$/.test(email)) return say("Email sahi nahi hai. Dobara check karo.");
-  if (!pass) return say("Password daalo.");
+  if (!email) return say("Enter your email.");
+  if (!/^\S+@\S+\.\S+$/.test(email)) return say("Enter a valid email address.");
+  if (!pass) return say("Enter your password.");
   const btn = $("go");
-  btn.disabled = true; btn.textContent = "Check ho raha hai…"; say("");
+  btn.disabled = true; btn.textContent = "Checking…"; say("");
   signingIn = true;
   try {
     const cred = await signInWithEmailAndPassword(auth, email, pass);
     if (await isAdmin(cred.user.uid)) {
-      say("Login ho gaya. Dashboard khul raha hai…", true);
+      say("Logged in. Opening the dashboard…", true);
       location.replace("/admin/");
       return;
     }
     await signOut(auth);
-    say("Is account ko admin access nahi hai. Sirf admin login kar sakta hai.");
+    say("This account doesn't have admin access.");
   } catch (e) {
     console.error(e);
-    say(e && e.code && e.code.startsWith("auth/") ? friendly(e) : "Login nahi ho paya. Dobara try karo.");
+    say(e && e.code && e.code.startsWith("auth/") ? friendly(e) : "Couldn't log in. Please try again.");
   } finally {
     signingIn = false;
-    btn.disabled = false; btn.textContent = "Admin login";
+    btn.disabled = false; btn.textContent = "Log in";
   }
 });
 
 $("forgot").onclick = async () => {
   const email = $("em").value.trim();
-  if (!/^\S+@\S+\.\S+$/.test(email)) return say("Pehle apna email daalo, fir reset link bhejenge.");
+  if (!/^\S+@\S+\.\S+$/.test(email)) return say("Enter your email first, then we'll send a reset link.");
   try {
     await sendPasswordResetEmail(auth, email);
-    say("Agar ye email registered hai to reset link bhej diya gaya hai.", true);
+    say("If this email is registered, a reset link has been sent.", true);
   } catch (e) {
     say(friendly(e));
   }
 };
 
-if (new URLSearchParams(location.search).get("denied")) say("Is account ko admin access nahi hai.");
+if (new URLSearchParams(location.search).get("denied")) say("This account doesn't have admin access.");
 
 // Already signed in as admin from earlier: go straight to the dashboard.
 onAuthStateChanged(auth, async (user) => {
