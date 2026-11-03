@@ -3,17 +3,17 @@ import { $, esc, toast, errMsg } from "./ui.js";
 
 // key -> [label, icon, subtitle, loader]. A null loader means "coming soon".
 export const SECTIONS = [
-  ["orders", "Orders", "ti-receipt-2", "Orders dekho aur status badlo", () => import("./pages/orders.js")],
-  ["products", "Products", "ti-package", "Product, price aur stock", () => import("./pages/products.js")],
-  ["categories", "Category", "ti-category", "Categories aur unki photo", () => import("./pages/categories.js")],
-  ["banners", "Banners", "ti-photo", "Home page ke banners", null],
+  ["orders", "Orders", "ti-receipt-2", "View orders and update status", () => import("./pages/orders.js")],
+  ["products", "Products", "ti-package", "Products, prices and stock", () => import("./pages/products.js")],
+  ["categories", "Category", "ti-category", "Categories and their photos", () => import("./pages/categories.js")],
+  ["banners", "Banners", "ti-photo", "Home page banners", null],
   ["coupons", "Coupons", "ti-ticket", "Coupon codes", null],
-  ["customers", "Customers", "ti-users", "Customer list aur report", null],
-  ["fees", "Fees", "ti-truck-delivery", "Delivery, handling, express", null],
-  ["areas", "Service areas", "ti-map-pin", "Gaon aur order ON/OFF", null],
+  ["customers", "Customers", "ti-users", "Customer list and report", null],
+  ["fees", "Fees", "ti-truck-delivery", "Delivery, handling and express fees", null],
+  ["areas", "Service areas", "ti-map-pin", "Villages and order on/off", null],
   ["delivery", "Delivery boys", "ti-motorbike", "Delivery accounts", null],
-  ["reports", "Reports", "ti-chart-bar", "Sale aur profit", null],
-  ["offers", "Send offer", "ti-bell", "Customers ko offer bhejo", null]
+  ["reports", "Reports", "ti-chart-bar", "Sales and profit", null],
+  ["offers", "Send offer", "ti-bell", "Send offers to customers", null]
 ];
 
 const view = $("#view");
@@ -43,7 +43,7 @@ async function show() {
     }
     cleanup = null;
   }
-  view.innerHTML = `<div class="loading">Khul raha hai…</div>`;
+  view.innerHTML = `<div class="loading">Loading…</div>`;
   window.scrollTo(0, 0);
   try {
     let loader;
@@ -54,7 +54,7 @@ async function show() {
       loader = s && s[4];
     }
     if (!loader) {
-      view.innerHTML = `<div class="empty"><i class="ti ti-tools"></i><h1>Jald aa raha hai</h1><p>Ye section abhi ban raha hai. Tab tak app se kaam karo.</p><a class="btn" href="#/">Dashboard</a></div>`;
+      view.innerHTML = `<div class="empty"><i class="ti ti-tools"></i><h1>Coming soon</h1><p>This section is still being built. Please use the app for now.</p><a class="btn" href="#/">Dashboard</a></div>`;
       return;
     }
     const mod = await loader();

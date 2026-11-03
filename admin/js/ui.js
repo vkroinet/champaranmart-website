@@ -27,12 +27,12 @@ export function startOfToday() {
 /** Plain-language message for a Firebase error. */
 export function errMsg(e) {
   const code = e && (e.code || "");
-  if (code.includes("permission-denied")) return "Is kaam ki permission nahi hai. Admin account se login ho?";
-  if (code.includes("unauthenticated")) return "Login khatam ho gaya. Dobara login karo.";
-  if (code.includes("unavailable") || code.includes("network")) return "Internet ya server ka problem hai. Thodi der baad try karo.";
-  if (code.includes("not-found")) return "Ye record mila nahi.";
-  if (code.includes("failed-precondition") && /index/i.test(e.message || "")) return "Firestore index chahiye. Console me link se bana lo.";
-  return (e && e.message) || "Kuch gadbad ho gayi. Dobara try karo.";
+  if (code.includes("permission-denied")) return "You don't have permission to do this. Are you logged in as an admin?";
+  if (code.includes("unauthenticated")) return "Your session has expired. Please log in again.";
+  if (code.includes("unavailable") || code.includes("network")) return "Network or server problem. Please try again shortly.";
+  if (code.includes("not-found")) return "Record not found.";
+  if (code.includes("failed-precondition") && /index/i.test(e.message || "")) return "Firestore needs an index. Create it using the link in the browser console.";
+  return (e && e.message) || "Something went wrong. Please try again.";
 }
 
 let toastTimer;
@@ -56,7 +56,7 @@ export function modal({ title, wide = false, onClose } = {}) {
   ov.className = "md-ov";
   ov.innerHTML = `
     <div class="md ${wide ? "wide" : ""}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
-      <div class="md-h"><h2>${esc(title)}</h2><button class="icon-btn" type="button" data-x aria-label="Band karo"><i class="ti ti-x"></i></button></div>
+      <div class="md-h"><h2>${esc(title)}</h2><button class="icon-btn" type="button" data-x aria-label="Close"><i class="ti ti-x"></i></button></div>
       <div class="md-b"></div>
       <div class="md-f"></div>
     </div>`;
@@ -80,10 +80,10 @@ export function modal({ title, wide = false, onClose } = {}) {
 }
 
 /** Yes/no question inside the page (the browser's confirm() looks poor and can be blocked). */
-export function confirmBox(message, { okText = "Haan", cancelText = "Nahi", danger = false } = {}) {
+export function confirmBox(message, { okText = "Yes", cancelText = "No", danger = false } = {}) {
   return new Promise((resolve) => {
     let done = false;
-    const m = modal({ title: "Pakka?", onClose: () => !done && resolve(false) });
+    const m = modal({ title: "Are you sure?", onClose: () => !done && resolve(false) });
     m.body.innerHTML = `<p class="confirm-msg">${esc(message)}</p>`;
     m.footer.innerHTML = `<button class="btn ghost" type="button" data-no>${esc(cancelText)}</button>
       <button class="btn ${danger ? "danger" : ""}" type="button" data-yes>${esc(okText)}</button>`;
