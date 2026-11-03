@@ -5,14 +5,14 @@ import { $, $$, esc, money, fmtDate, modal, confirmBox, toast, errMsg, busy } fr
 import { isUnpaidOnline } from "./dashboard.js";
 
 const STATUS = {
-  placed: "Naya",
+  placed: "Placed",
   packed: "Packed",
-  out_for_delivery: "Raste me",
+  out_for_delivery: "Out for delivery",
   delivered: "Delivered",
   cancelled: "Cancelled"
 };
 const NEXT = { placed: "packed", packed: "out_for_delivery", out_for_delivery: "delivered" };
-const NEXT_LABEL = { packed: "Packed karo", out_for_delivery: "Raste me bhejo", delivered: "Delivered karo" };
+const NEXT_LABEL = { packed: "Mark as packed", out_for_delivery: "Send out for delivery", delivered: "Mark as delivered" };
 const TS_FIELD = { packed: "packedAt", out_for_delivery: "outForDeliveryAt", delivered: "deliveredAt" };
 
 const orderNo = (o) => String(o.orderNumber || 0).padStart(5, "0");
@@ -36,7 +36,7 @@ async function setStatus(o, status) {
   // Cancel and put the stock back in one transaction, same as the app does.
   await runTransaction(db, async (tx) => {
     const os = await tx.get(ref);
-    if (!os.exists()) throw new Error("Order mila nahi.");
+    if (!os.exists()) throw new Error("Order not found.");
     const order = os.data();
     const restore = order.status !== "cancelled" && !isUnpaidOnline(order);
     const ids = restore ? [...new Set((order.items || []).map((i) => i.productId))] : [];
@@ -67,7 +67,7 @@ async function setStatus(o, status) {
 function printBill(o) {
   const w = window.open("", "_blank", "width=380,height=640");
   if (!w) {
-    toast("Pop-up block hai. Allow karke dobara try karo.", "err");
+    toast("Pop-up was blocked. Allow pop-ups and try again.", "err");
     return;
   }
   const rows = (o.items || [])
@@ -85,7 +85,7 @@ function printBill(o) {
   <tr><td>Delivery</td><td style="text-align:right">${money(o.deliveryFee)}</td></tr>
   <tr><td>Handling</td><td style="text-align:right">${money(handlingOf(o))}</td></tr>
   <tr><td><b>Total</b></td><td style="text-align:right"><b>${money(o.totalAmount)}</b></td></tr></table>
-  <p style="text-align:center">${esc(payLabel(o))}<br>Dhanyavaad!</p>
+  <p style="text-align:center">${esc(payLabel(o))}<br>Thank you!</p>
   <script>window.onload=function(){window.print()}<\/script></body>`);
   w.document.close();
 }
@@ -102,9 +102,9 @@ export function render(view) {
     <div class="ph"><h1>Orders</h1></div>
     <div class="toolbar">
       <div class="chips" id="chips"></div>
-      <input class="in" id="q" type="search" placeholder="Order no, naam ya phone" aria-label="Orders dhundho">
+      <input class="in" id="q" type="search" placeholder="Order no., name or phone" aria-label="Search orders">
     </div>
-    <div class="list" id="list"><div class="loading">Orders aa rahe hain…</div></div>`;
+    <div class="list" id="list"><div class="loading">Loading orders…</div></div>`;
 
   function counts() {
     const c = { all: orders.length };
@@ -114,7 +114,7 @@ export function render(view) {
 
   function drawChips() {
     const c = counts();
-    $("#chips", view).innerHTML = [["all", "Sab"], ...Object.entries(STATUS)]
+    $("#chips", view).innerHTML = [["all", "All"], ...Object.entries(STATUS)]
       .map(([k, l]) => `<button type="button" class="chip ${filter === k ? "on" : ""}" data-f="${k}">${esc(l)}<small>${c[k] ?? 0}</small></button>`)
       .join("");
   }
@@ -130,7 +130,7 @@ export function render(view) {
     );
     const list = $("#list", view);
     if (!rows.length) {
-      list.innerHTML = `<div class="empty"><i class="ti ti-receipt-off"></i>Koi order nahi mila.</div>`;
+      list.innerHTML = `<div class="empty"><i class="ti ti-receipt-off"></i>No orders found.</div>`;
       return;
     }
     list.innerHTML = rows
@@ -188,9 +188,9 @@ export function render(view) {
       </div>
       <div class="field" style="margin-top:16px">
         <label class="f" for="agent">Delivery boy</label>
-        <select class="in" id="agent"><option value="">Abhi koi nahi</option>
+        <select class="in" id="agent"><option value="">Unassigned</option>
           ${ag.map((a) => `<option value="${esc(a.id)}" ${o.deliveryAgentId === a.id ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select>
-        ${o.deliveryAgentId && !ag.some((a) => a.id === o.deliveryAgentId) ? `<div class="hint">Abhi: ${esc(o.deliveryAgentName)}</div>` : ""}
+        ${o.deliveryAgentId && !ag.some((a) => a.id === o.deliveryAgentId) ? `<div class="hint">Current: ${esc(o.deliveryAgentName)}</div>` : ""}
       </div>`;
     detail.footer.innerHTML = `
       <button class="btn ghost" type="button" data-print><i class="ti ti-printer"></i> Bill</button>
@@ -202,7 +202,7 @@ export function render(view) {
       const a = ag.find((x) => x.id === id);
       try {
         await updateDoc(doc(db, "orders", o.id), { deliveryAgentId: id, deliveryAgentName: a ? a.name : "" });
-        toast("Delivery boy set ho gaya");
+        toast("Delivery boy assigned");
       } catch (err) {
         toast(errMsg(err), "err");
       }
@@ -214,7 +214,7 @@ export function render(view) {
         busy(nb, async () => {
           try {
             await setStatus(o, nb.dataset.next);
-            toast("Status badal gaya");
+            toast("Status updated");
           } catch (err) {
             toast(errMsg(err), "err");
           }
@@ -222,10 +222,10 @@ export function render(view) {
     const cb = $("[data-cancel]", detail.footer);
     if (cb)
       cb.onclick = async () => {
-        if (!(await confirmBox(`Order #${orderNo(o)} cancel karna hai? Stock wapas shelf me chala jayega.`, { okText: "Haan, cancel", cancelText: "Nahi", danger: true }))) return;
+        if (!(await confirmBox(`Order #${orderNo(o)} will be cancelled and its stock returned to the shelf. Continue?`, { okText: "Yes, cancel", cancelText: "No", danger: true }))) return;
         try {
           await setStatus(o, "cancelled");
-          toast("Order cancel ho gaya");
+          toast("Order cancelled");
         } catch (err) {
           toast(errMsg(err), "err");
         }
@@ -237,7 +237,7 @@ export function render(view) {
     if (!o) return;
     openId = id;
     detail = modal({ title: `Order #${orderNo(o)}`, wide: true, onClose: () => { detail = null; openId = null; } });
-    detail.body.innerHTML = '<div class="loading">Khul raha hai…</div>';
+    detail.body.innerHTML = '<div class="loading">Loading…</div>';
     drawDetail();
   }
 

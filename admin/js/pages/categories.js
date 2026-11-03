@@ -10,15 +10,15 @@ export function render(view) {
   let cats = [];
 
   view.innerHTML = `
-    <div class="ph"><h1>Categories</h1><div class="sp"></div><button class="btn" id="add" type="button"><i class="ti ti-plus"></i> Nayi category</button></div>
-    <div class="list" id="list"><div class="loading">Categories aa rahi hain…</div></div>`;
+    <div class="ph"><h1>Categories</h1><div class="sp"></div><button class="btn" id="add" type="button"><i class="ti ti-plus"></i> New category</button></div>
+    <div class="list" id="list"><div class="loading">Loading categories…</div></div>`;
 
   const parentName = (c) => (c.parentCategory && c.parentCategory !== MAIN ? (cats.find((x) => x.id === c.parentCategory) || {}).name || "" : "");
 
   function drawList() {
     const list = $("#list", view);
     if (!cats.length) {
-      list.innerHTML = `<div class="empty"><i class="ti ti-category"></i>Abhi koi category nahi hai.</div>`;
+      list.innerHTML = `<div class="empty"><i class="ti ti-category"></i>No categories yet.</div>`;
       return;
     }
     list.innerHTML = cats
@@ -26,7 +26,7 @@ export function render(view) {
         (c) => `<div class="row-card" data-id="${esc(c.id)}" tabindex="0" role="button">
         ${c.imageUrl ? `<img class="thumb" src="${esc(c.imageUrl)}" alt="" loading="lazy">` : '<div class="thumb ph"><i class="ti ti-photo"></i></div>'}
         <div><div class="t">${esc(c.name)}</div><div class="s">${parentName(c) ? "Sub-category of " + esc(parentName(c)) : "Main category"} · order ${c.order || 0}</div></div>
-        <div class="r">${c.active === false ? '<span class="badge b-muted">Band</span>' : '<span class="badge b-ok">Active</span>'}</div></div>`
+        <div class="r">${c.active === false ? '<span class="badge b-muted">Inactive</span>' : '<span class="badge b-ok">Active</span>'}</div></div>`
       )
       .join("");
   }
@@ -36,37 +36,37 @@ export function render(view) {
     let imageUrl = c.imageUrl || "";
     let file = null;
     let oldUrl = existing ? existing.imageUrl : "";
-    const m = modal({ title: existing ? "Category badlo" : "Nayi category" });
+    const m = modal({ title: existing ? "Edit category" : "New category" });
     const parents = cats.filter((x) => (!x.parentCategory || x.parentCategory === MAIN) && x.id !== c.id);
     m.body.innerHTML = `
       <div class="field"><label class="f">Photo</label>
         <div class="imgs" id="img"></div>
         <input type="file" id="file" accept="image/*" hidden>
-        <button class="btn ghost sm" type="button" id="pick"><i class="ti ti-photo-plus"></i> Photo chuno</button></div>
-      <div class="field"><label class="f" for="c-name">Naam *</label><input class="in" id="c-name" value="${esc(c.name)}" maxlength="60"></div>
-      <div class="field"><label class="f" for="c-parent">Kahan dikhani hai</label>
-        <select class="in" id="c-parent"><option value="${MAIN}">Main category (home page par)</option>
-          ${parents.map((p) => `<option value="${esc(p.id)}" ${c.parentCategory === p.id ? "selected" : ""}>${esc(p.name)} ke andar</option>`).join("")}</select></div>
+        <button class="btn ghost sm" type="button" id="pick"><i class="ti ti-photo-plus"></i> Choose photo</button></div>
+      <div class="field"><label class="f" for="c-name">Name *</label><input class="in" id="c-name" value="${esc(c.name)}" maxlength="60"></div>
+      <div class="field"><label class="f" for="c-parent">Show under</label>
+        <select class="in" id="c-parent"><option value="${MAIN}">Main category (home page)</option>
+          ${parents.map((p) => `<option value="${esc(p.id)}" ${c.parentCategory === p.id ? "selected" : ""}>Inside ${esc(p.name)}</option>`).join("")}</select></div>
       <div class="grid2">
         <div class="field"><label class="f" for="c-order">Order</label><input class="in" id="c-order" inputmode="numeric" value="${esc(c.order || 0)}"></div>
-        <div class="field"><label class="chk" style="margin-top:28px"><input type="checkbox" id="c-act" ${c.active !== false ? "checked" : ""}> Dikhao (active)</label></div>
+        <div class="field"><label class="chk" style="margin-top:28px"><input type="checkbox" id="c-act" ${c.active !== false ? "checked" : ""}> Active (visible)</label></div>
       </div>
       <p class="err-line" id="cerr" role="alert"></p>`;
     m.footer.innerHTML = `
       ${existing ? '<button class="btn ghost" type="button" id="del" style="color:var(--err);margin-right:auto"><i class="ti ti-trash"></i> Delete</button>' : ""}
-      <button class="btn ghost" type="button" id="cancel">Band karo</button>
-      <button class="btn" type="button" id="save">Save karo</button>`;
+      <button class="btn ghost" type="button" id="cancel">Close</button>
+      <button class="btn" type="button" id="save">Save</button>`;
 
     const drawImg = () => {
       const src = file ? URL.createObjectURL(file) : imageUrl;
-      $("#img", m.body).innerHTML = src ? `<div class="im"><img src="${esc(src)}" alt=""></div>` : '<span class="hint">Photo nahi hai.</span>';
+      $("#img", m.body).innerHTML = src ? `<div class="im"><img src="${esc(src)}" alt=""></div>` : '<span class="hint">No photo.</span>';
     };
     drawImg();
     $("#pick", m.body).onclick = () => $("#file", m.body).click();
     $("#file", m.body).onchange = (e) => {
       const f = e.target.files[0];
       if (!f) return;
-      if (f.size > 5 * 1024 * 1024) return toast("Photo 5 MB se choti rakho", "err");
+      if (f.size > 5 * 1024 * 1024) return toast("Photo must be under 5 MB", "err");
       file = f;
       drawImg();
     };
@@ -79,10 +79,10 @@ export function render(view) {
           const used = await getDocs(query(collection(db, "products"), where("categoryId", "==", c.id), limit(1)));
           const kids = cats.some((x) => x.parentCategory === c.id);
           if (!used.empty || kids) {
-            toast("Is category me product ya sub-category hai. Pehle unhe hatao ya dusri category me daalo.", "err");
+            toast("This category still has products or sub-categories. Move or remove them first.", "err");
             return;
           }
-          if (!(await confirmBox(`"${c.name}" delete karni hai?`, { okText: "Haan, delete", danger: true }))) return;
+          if (!(await confirmBox(`Delete "${c.name}"?`, { okText: "Yes, delete", danger: true }))) return;
           await deleteDoc(doc(db, "categories", c.id));
           if (c.imageUrl && c.imageUrl.includes("/o/categories%2F")) deleteObject(storageRef(storage, c.imageUrl)).catch(() => {});
           toast("Category delete ho gayi");
@@ -99,7 +99,7 @@ export function render(view) {
         err.textContent = "";
         const name = $("#c-name", m.body).value.trim();
         if (!name) {
-          err.textContent = "Category ka naam daalo.";
+          err.textContent = "Enter the category name.";
           return;
         }
         try {
@@ -124,7 +124,7 @@ export function render(view) {
             { merge: true }
           );
           if (file && oldUrl && oldUrl !== url && oldUrl.includes("/o/categories%2F")) deleteObject(storageRef(storage, oldUrl)).catch(() => {});
-          toast(existing ? "Category update ho gayi" : "Category jud gayi");
+          toast(existing ? "Category updated" : "Category added");
           m.close();
         } catch (e) {
           err.textContent = errMsg(e);

@@ -31,13 +31,13 @@ export function render(view) {
   let stockFilter = "";
 
   view.innerHTML = `
-    <div class="ph"><h1>Products</h1><div class="sp"></div><button class="btn" id="add" type="button"><i class="ti ti-plus"></i> Naya product</button></div>
+    <div class="ph"><h1>Products</h1><div class="sp"></div><button class="btn" id="add" type="button"><i class="ti ti-plus"></i> New product</button></div>
     <div class="toolbar">
-      <input class="in" id="q" type="search" placeholder="Naam, brand ya SKU" aria-label="Product dhundho">
-      <select class="in" id="cf" style="max-width:200px" aria-label="Category"><option value="">Saari categories</option></select>
-      <select class="in" id="sf" style="max-width:170px" aria-label="Stock"><option value="">Sab</option><option value="low">Stock kam</option><option value="out">Stock khatam</option><option value="off">Band (hidden)</option></select>
+      <input class="in" id="q" type="search" placeholder="Name, brand or SKU" aria-label="Search products">
+      <select class="in" id="cf" style="max-width:200px" aria-label="Category"><option value="">All categories</option></select>
+      <select class="in" id="sf" style="max-width:170px" aria-label="Stock"><option value="">All</option><option value="low">Low stock</option><option value="out">Out of stock</option><option value="off">Inactive (hidden)</option></select>
     </div>
-    <div class="list" id="list"><div class="loading">Products aa rahe hain…</div></div>`;
+    <div class="list" id="list"><div class="loading">Loading products…</div></div>`;
 
   const catName = (id) => (categories.find((c) => c.id === id) || {}).name || "";
 
@@ -56,7 +56,7 @@ export function render(view) {
       .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0) || (a.name || "").localeCompare(b.name || ""));
     const list = $("#list", view);
     if (!rows.length) {
-      list.innerHTML = `<div class="empty"><i class="ti ti-package-off"></i>Koi product nahi mila.</div>`;
+      list.innerHTML = `<div class="empty"><i class="ti ti-package-off"></i>No products found.</div>`;
       return;
     }
     list.innerHTML = rows
@@ -66,10 +66,10 @@ export function render(view) {
         return `<div class="row-card" data-id="${esc(p.id)}" tabindex="0" role="button">
         ${img ? `<img class="thumb" src="${esc(img)}" alt="" loading="lazy">` : '<div class="thumb ph"><i class="ti ti-photo"></i></div>'}
         <div><div class="t">${esc(p.name)} <span class="muted" style="font-weight:500">${esc(p.unit)}</span></div>
-          <div class="s">${esc(catName(p.categoryId) || "Category nahi")}${p.brand ? " · " + esc(p.brand) : ""}${p.variants && p.variants.length > 1 ? ` · ${p.variants.length} sizes` : ""}</div></div>
+          <div class="s">${esc(catName(p.categoryId) || "No category")}${p.brand ? " · " + esc(p.brand) : ""}${p.variants && p.variants.length > 1 ? ` · ${p.variants.length} sizes` : ""}</div></div>
         <div class="r"><b>${money(p.price)}</b>${p.mrp > p.price ? ` <s class="muted">${money(p.mrp)}</s>` : ""}
           <span class="badge ${s <= 0 ? "b-err" : s <= 5 ? "b-warn" : "b-ok"}">Stock ${s}</span>
-          ${p.active === false ? '<span class="badge b-muted">Band</span>' : ""}</div></div>`;
+          ${p.active === false ? '<span class="badge b-muted">Inactive</span>' : ""}</div></div>`;
       })
       .join("");
   }
@@ -77,7 +77,7 @@ export function render(view) {
   function drawCatFilter() {
     const sel = $("#cf", view);
     sel.innerHTML =
-      `<option value="">Saari categories</option>` +
+      `<option value="">All categories</option>` +
       categories.map((c) => `<option value="${esc(c.id)}" ${c.id === catFilter ? "selected" : ""}>${esc(c.name)}</option>`).join("");
   }
 
@@ -89,61 +89,61 @@ export function render(view) {
     const removed = [];
     let extra = hadVariants ? p.variants.slice(1).map((v) => ({ ...v })) : [];
 
-    const m = modal({ title: existing ? "Product badlo" : "Naya product", wide: true });
+    const m = modal({ title: existing ? "Edit product" : "New product", wide: true });
     const catOpts = categories.map((c) => `<option value="${esc(c.id)}" ${p.categoryId === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("");
     m.body.innerHTML = `
       <form id="pf" novalidate>
         <div class="sec-h">Photos</div>
         <div class="imgs" id="imgs"></div>
         <input type="file" id="file" accept="image/*" multiple hidden>
-        <button class="btn ghost sm" type="button" id="pick"><i class="ti ti-photo-plus"></i> Photo jodo</button>
-        <div class="hint">Pehli photo main photo hogi.</div>
+        <button class="btn ghost sm" type="button" id="pick"><i class="ti ti-photo-plus"></i> Add photos</button>
+        <div class="hint">The first photo is the main photo.</div>
 
         <div class="sec-h">Basic</div>
-        <div class="field"><label class="f" for="f-name">Naam *</label><input class="in" id="f-name" value="${esc(p.name)}" maxlength="120"></div>
+        <div class="field"><label class="f" for="f-name">Name *</label><input class="in" id="f-name" value="${esc(p.name)}" maxlength="120"></div>
         <div class="field"><label class="f" for="f-desc">Description</label><textarea class="in" id="f-desc">${esc(p.description)}</textarea></div>
         <div class="grid2">
-          <div class="field"><label class="f" for="f-unit">Unit (jaise 500 g) *</label><input class="in" id="f-unit" value="${esc(p.unit)}"></div>
+          <div class="field"><label class="f" for="f-unit">Unit (e.g. 500 g) *</label><input class="in" id="f-unit" value="${esc(p.unit)}"></div>
           <div class="field"><label class="f" for="f-price">Price (₹) *</label><input class="in" id="f-price" inputmode="decimal" value="${esc(p.price)}"></div>
           <div class="field"><label class="f" for="f-mrp">MRP (₹)</label><input class="in" id="f-mrp" inputmode="decimal" value="${esc(p.mrp || "")}"></div>
-          <div class="field"><label class="f" for="f-buy">Kharid price (₹)</label><input class="in" id="f-buy" inputmode="decimal" value="${esc(p.buyingPrice || "")}"></div>
+          <div class="field"><label class="f" for="f-buy">Buying price (₹)</label><input class="in" id="f-buy" inputmode="decimal" value="${esc(p.buyingPrice || "")}"></div>
           <div class="field"><label class="f" for="f-stock">Stock *</label><input class="in" id="f-stock" inputmode="numeric" value="${esc(hadVariants ? p.variants[0].stock : p.stock || 0)}"></div>
           <div class="field"><label class="f" for="f-order">Display order</label><input class="in" id="f-order" inputmode="numeric" value="${esc(p.displayOrder || 0)}"></div>
         </div>
 
         <div class="sec-h">Category</div>
         <div class="field"><label class="f" for="f-cat">Main category *</label>
-          <select class="in" id="f-cat"><option value="">Chuno</option>${catOpts}</select></div>
-        <div class="field"><label class="f">Aur categories me bhi dikhao</label><div class="catpick" id="extra-cats"></div></div>
+          <select class="in" id="f-cat"><option value="">Select</option>${catOpts}</select></div>
+        <div class="field"><label class="f">Also show in these categories</label><div class="catpick" id="extra-cats"></div></div>
 
-        <div class="sec-h">Aur details</div>
+        <div class="sec-h">More details</div>
         <div class="grid2">
           <div class="field"><label class="f" for="f-brand">Brand</label><input class="in" id="f-brand" value="${esc(p.brand)}"></div>
           <div class="field"><label class="f" for="f-sku">SKU</label><input class="in" id="f-sku" value="${esc(p.sku)}"></div>
           <div class="field"><label class="f" for="f-exp">Expiry date</label><input class="in" id="f-exp" type="date" value="${toDateInput(p.expiryDate)}"></div>
         </div>
         <div class="grid2">
-          <div class="field"><label class="f" for="f-a1n">Attribute 1 ka naam</label><input class="in" id="f-a1n" value="${esc(p.attribute1Name)}" placeholder="Jaise Type"></div>
-          <div class="field"><label class="f" for="f-a1v">Attribute 1 ki value</label><input class="in" id="f-a1v" value="${esc(p.attribute1Value)}"></div>
-          <div class="field"><label class="f" for="f-a2n">Attribute 2 ka naam</label><input class="in" id="f-a2n" value="${esc(p.attribute2Name)}"></div>
-          <div class="field"><label class="f" for="f-a2v">Attribute 2 ki value</label><input class="in" id="f-a2v" value="${esc(p.attribute2Value)}"></div>
+          <div class="field"><label class="f" for="f-a1n">Attribute 1 name</label><input class="in" id="f-a1n" value="${esc(p.attribute1Name)}" placeholder="e.g. Type"></div>
+          <div class="field"><label class="f" for="f-a1v">Attribute 1 value</label><input class="in" id="f-a1v" value="${esc(p.attribute1Value)}"></div>
+          <div class="field"><label class="f" for="f-a2n">Attribute 2 name</label><input class="in" id="f-a2n" value="${esc(p.attribute2Name)}"></div>
+          <div class="field"><label class="f" for="f-a2v">Attribute 2 value</label><input class="in" id="f-a2v" value="${esc(p.attribute2Value)}"></div>
         </div>
         <div style="display:flex;gap:22px;flex-wrap:wrap;margin-bottom:8px">
           <label class="chk"><input type="checkbox" id="f-best" ${p.bestSeller ? "checked" : ""}> Best seller</label>
           <label class="chk"><input type="checkbox" id="f-hot" ${p.hotDeal ? "checked" : ""}> Hot deal</label>
-          <label class="chk"><input type="checkbox" id="f-act" ${p.active !== false ? "checked" : ""}> Dikhao (active)</label>
+          <label class="chk"><input type="checkbox" id="f-act" ${p.active !== false ? "checked" : ""}> Active (visible)</label>
         </div>
 
-        <div class="sec-h">Aur sizes (variants)</div>
-        <div class="hint" style="margin:0 0 8px">Upar wala unit, price aur stock pehla size hai. Dusre sizes yahan jodo.</div>
+        <div class="sec-h">More sizes (variants)</div>
+        <div class="hint" style="margin:0 0 8px">The unit, price and stock above are the first size. Add other sizes here.</div>
         <div id="vars"></div>
-        <button class="btn ghost sm" type="button" id="addv"><i class="ti ti-plus"></i> Size jodo</button>
+        <button class="btn ghost sm" type="button" id="addv"><i class="ti ti-plus"></i> Add size</button>
         <p class="err-line" id="ferr" role="alert"></p>
       </form>`;
     m.footer.innerHTML = `
       ${existing ? '<button class="btn ghost" type="button" id="del" style="color:var(--err);margin-right:auto"><i class="ti ti-trash"></i> Delete</button>' : ""}
-      <button class="btn ghost" type="button" id="cancel">Band karo</button>
-      <button class="btn" type="button" id="save">Save karo</button>`;
+      <button class="btn ghost" type="button" id="cancel">Close</button>
+      <button class="btn" type="button" id="save">Save</button>`;
 
     const extraSet = new Set(p.extraCategoryIds || []);
     function drawExtraCats() {
@@ -151,7 +151,7 @@ export function render(view) {
       $("#extra-cats", m.body).innerHTML = categories
         .filter((c) => c.id !== main)
         .map((c) => `<label class="chk"><input type="checkbox" value="${esc(c.id)}" ${extraSet.has(c.id) ? "checked" : ""}> ${esc(c.name)}</label>`)
-        .join("") || '<span class="hint">Aur category nahi hai.</span>';
+        .join("") || '<span class="hint">No other categories.</span>';
     }
     drawExtraCats();
     $("#f-cat", m.body).onchange = drawExtraCats;
@@ -163,7 +163,7 @@ export function render(view) {
     function drawImgs() {
       $("#imgs", m.body).innerHTML = imgs
         .map(
-          (im, i) => `<div class="im"><img src="${esc(im.url || im.preview)}" alt="">${i === 0 ? "<em>Main</em>" : ""}<button type="button" data-rm="${i}" aria-label="Hatao">×</button></div>`
+          (im, i) => `<div class="im"><img src="${esc(im.url || im.preview)}" alt="">${i === 0 ? "<em>Main</em>" : ""}<button type="button" data-rm="${i}" aria-label="Remove">×</button></div>`
         )
         .join("");
     }
@@ -178,7 +178,7 @@ export function render(view) {
     $("#pick", m.body).onclick = () => $("#file", m.body).click();
     $("#file", m.body).onchange = (e) => {
       [...e.target.files].forEach((f) => {
-        if (f.size > 8 * 1024 * 1024) return toast(`${f.name} 8 MB se badi hai`, "err");
+        if (f.size > 8 * 1024 * 1024) return toast(`${f.name} is larger than 8 MB`, "err");
         imgs.push({ file: f, preview: URL.createObjectURL(f) });
       });
       e.target.value = "";
@@ -189,11 +189,11 @@ export function render(view) {
       $("#vars", m.body).innerHTML = extra
         .map(
           (v, i) => `<div class="vrow" data-i="${i}">
-          <input class="in" data-k="label" placeholder="Size (jaise 1 kg)" value="${esc(v.label)}" aria-label="Size">
+          <input class="in" data-k="label" placeholder="Size (e.g. 1 kg)" value="${esc(v.label)}" aria-label="Size">
           <input class="in" data-k="price" inputmode="decimal" placeholder="Price" value="${esc(v.price || "")}" aria-label="Price">
           <input class="in" data-k="mrp" inputmode="decimal" placeholder="MRP" value="${esc(v.mrp || "")}" aria-label="MRP">
           <input class="in" data-k="stock" inputmode="numeric" placeholder="Stock" value="${esc(v.stock ?? "")}" aria-label="Stock">
-          <button class="icon-btn" type="button" data-rv="${i}" aria-label="Size hatao"><i class="ti ti-trash"></i></button></div>`
+          <button class="icon-btn" type="button" data-rv="${i}" aria-label="Remove size"><i class="ti ti-trash"></i></button></div>`
         )
         .join("");
     }
@@ -218,11 +218,11 @@ export function render(view) {
     const del = $("#del", m.footer);
     if (del)
       del.onclick = async () => {
-        if (!(await confirmBox(`"${p.name}" hamesha ke liye delete karna hai?`, { okText: "Haan, delete", danger: true }))) return;
+        if (!(await confirmBox(`Delete "${p.name}" permanently?`, { okText: "Yes, delete", danger: true }))) return;
         try {
           await deleteDoc(doc(db, "products", p.id));
           [p.imageUrl, ...(p.imageUrls || [])].forEach(removeImage);
-          toast("Product delete ho gaya");
+          toast("Product deleted");
           m.close();
         } catch (e) {
           toast(errMsg(e), "err");
@@ -242,32 +242,32 @@ export function render(view) {
         const price = num($("#f-price", m.body).value, NaN);
         const stock = parseInt($("#f-stock", m.body).value || "0", 10);
         const categoryId = $("#f-cat", m.body).value;
-        if (!name) return fail("Product ka naam daalo.");
-        if (!unit) return fail("Unit daalo (jaise 500 g).");
-        if (!(price > 0)) return fail("Sahi price daalo.");
-        if (!(stock >= 0)) return fail("Sahi stock daalo.");
-        if (!categoryId) return fail("Category chuno.");
+        if (!name) return fail("Enter the product name.");
+        if (!unit) return fail("Enter the unit (e.g. 500 g).");
+        if (!(price > 0)) return fail("Enter a valid price.");
+        if (!(stock >= 0)) return fail("Enter a valid stock quantity.");
+        if (!categoryId) return fail("Select a category.");
         const mrp = num($("#f-mrp", m.body).value, price) || price;
 
         const built = [];
         for (const [i, v] of extra.entries()) {
           const vp = num(v.price, NaN);
           const vs = parseInt(v.stock === "" || v.stock == null ? "0" : v.stock, 10);
-          if (!String(v.label).trim()) return fail(`Size ${i + 2} ka naam daalo.`);
-          if (!(vp > 0)) return fail(`'${v.label}' ka sahi price daalo.`);
-          if (!(vs >= 0)) return fail(`'${v.label}' ka sahi stock daalo.`);
+          if (!String(v.label).trim()) return fail(`Enter a name for size ${i + 2}.`);
+          if (!(vp > 0)) return fail(`Enter a valid price for '${v.label}'.`);
+          if (!(vs >= 0)) return fail(`Enter a valid stock quantity for '${v.label}'.`);
           built.push({ id: v.id || uid(), label: String(v.label).trim(), price: vp, mrp: num(v.mrp, vp) || vp, stock: vs });
         }
         const variants = built.length
           ? [{ id: (hadVariants && p.variants[0].id) || uid(), label: unit, price, mrp, stock }, ...built]
           : [];
 
-        save.textContent = "Photo upload ho rahi hai…";
+        save.textContent = "Uploading photos…";
         const urls = [];
         try {
           for (const im of imgs) urls.push(im.url || (await uploadImage(im.file)));
         } catch (e) {
-          return fail("Photo upload nahi hui: " + errMsg(e));
+          return fail("Photo upload failed: " + errMsg(e));
         }
 
         const ref = existing ? doc(db, "products", p.id) : doc(collection(db, "products"));
@@ -301,7 +301,7 @@ export function render(view) {
         try {
           await setDoc(ref, data, { merge: true });
           removed.forEach(removeImage);
-          toast(existing ? "Product update ho gaya" : "Product jud gaya");
+          toast(existing ? "Product updated" : "Product added");
           m.close();
         } catch (e) {
           fail(errMsg(e));

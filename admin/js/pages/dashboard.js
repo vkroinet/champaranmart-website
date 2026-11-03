@@ -7,16 +7,16 @@ export function render(view, { sections }) {
   view.innerHTML = `
     <div class="ph"><h1>Dashboard</h1></div>
     <div class="metrics" id="metrics">
-      <div class="metric"><small>Naye orders</small><b id="m-new">-</b></div>
-      <div class="metric"><small>Aaj ke orders</small><b id="m-today">-</b></div>
-      <div class="metric"><small>Aaj ki sale</small><b id="m-sale">-</b></div>
-      <div class="metric"><small>Stock kam (5 ya kam)</small><b id="m-low">-</b></div>
+      <div class="metric"><small>New orders</small><b id="m-new">-</b></div>
+      <div class="metric"><small>Today's orders</small><b id="m-today">-</b></div>
+      <div class="metric"><small>Today's sales</small><b id="m-sale">-</b></div>
+      <div class="metric"><small>Low stock (5 or less)</small><b id="m-low">-</b></div>
     </div>
     <div class="tiles">
       ${sections
         .map(
           (s) => `<a class="tile ${s[4] ? "" : "soon"}" href="#/${s[0]}"><i class="ti ${s[2]}"></i><div><b>${esc(s[1])}</b><span>${esc(s[3])}</span></div>${
-            s[4] ? "" : '<em class="soon-tag" style="font-style:normal">jald</em>'
+            s[4] ? "" : '<em class="soon-tag" style="font-style:normal">soon</em>'
           }</a>`
         )
         .join("")}
