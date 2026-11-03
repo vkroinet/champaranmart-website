@@ -138,7 +138,7 @@ export function render(view) {
         (o) => `<div class="row-card" data-id="${esc(o.id)}" tabindex="0" role="button">
         <i class="ti ti-receipt-2" style="font-size:22px;color:var(--brand)"></i>
         <div><div class="t">#${orderNo(o)} · ${esc(o.customerName || "Customer")}</div>
-          <div class="s">${(o.items || []).length} ${(o.items || []).length === 1 ? "item" : "items"} ·${esc(fmtDate(o.createdAt))}${o.deliveryType === "express" ? " · Express" : ""}</div></div>
+          <div class="s">${(o.items || []).length} ${(o.items || []).length === 1 ? "item" : "items"} · ${esc(fmtDate(o.createdAt))}${o.deliveryType === "express" ? " · Express" : ""}</div></div>
         <div class="r"><b>${money(o.totalAmount)}</b>
           <span class="badge b-muted">${esc(payLabel(o))}</span>
           <span class="badge b-${esc(o.status)}">${esc(STATUS[o.status] || o.status)}</span></div>
