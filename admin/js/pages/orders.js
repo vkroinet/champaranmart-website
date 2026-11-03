@@ -138,7 +138,7 @@ export function render(view) {
         (o) => `<div class="row-card" data-id="${esc(o.id)}" tabindex="0" role="button">
         <i class="ti ti-receipt-2" style="font-size:22px;color:var(--brand)"></i>
         <div><div class="t">#${orderNo(o)} · ${esc(o.customerName || "Customer")}</div>
-          <div class="s">${(o.items || []).length} items · ${esc(fmtDate(o.createdAt))}${o.deliveryType === "express" ? " · Express" : ""}</div></div>
+          <div class="s">${(o.items || []).length} ${(o.items || []).length === 1 ? "item" : "items"} ·${esc(fmtDate(o.createdAt))}${o.deliveryType === "express" ? " · Express" : ""}</div></div>
         <div class="r"><b>${money(o.totalAmount)}</b>
           <span class="badge b-muted">${esc(payLabel(o))}</span>
           <span class="badge b-${esc(o.status)}">${esc(STATUS[o.status] || o.status)}</span></div>
@@ -171,7 +171,10 @@ export function render(view) {
       <dl class="kv">
         <dt>Customer</dt><dd>${esc(o.customerName)}${o.customerPhone ? ` · <a href="tel:${esc(o.customerPhone)}">${esc(o.customerPhone)}</a>` : ""}</dd>
         <dt>Address</dt><dd>${esc(o.address)}${o.lat ? ` <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${o.lat},${o.lng}">Map</a>` : ""}</dd>
-        <dt>Time</dt><dd>${esc(fmtDate(o.createdAt))}</dd>
+        <dt>Placed</dt><dd>${esc(fmtDate(o.createdAt))}</dd>
+        ${o.packedAt ? `<dt>Packed</dt><dd>${esc(fmtDate(o.packedAt))}</dd>` : ""}
+        ${o.outForDeliveryAt ? `<dt>Out for delivery</dt><dd>${esc(fmtDate(o.outForDeliveryAt))}</dd>` : ""}
+        ${o.deliveredAt ? `<dt>Delivered</dt><dd>${esc(fmtDate(o.deliveredAt))}</dd>` : ""}
         ${o.razorpayPaymentId ? `<dt>Payment id</dt><dd>${esc(o.razorpayPaymentId)}</dd>` : ""}
       </dl>
       <div class="items">${(o.items || [])
