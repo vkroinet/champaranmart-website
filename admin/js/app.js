@@ -7,7 +7,7 @@ export const SECTIONS = [
   ["products", "Products", "ti-package", "Products, prices and stock", () => import("./pages/products.js")],
   ["categories", "Category", "ti-category", "Categories and their photos", () => import("./pages/categories.js")],
   ["banners", "Banners", "ti-photo", "Home page banners", () => import("./pages/banners.js")],
-  ["coupons", "Coupons", "ti-ticket", "Coupon codes", null],
+  ["coupons", "Coupons", "ti-ticket", "Coupon codes", () => import("./pages/coupons.js")],
   ["customers", "Customers", "ti-users", "Customer list and report", () => import("./pages/customers.js")],
   ["fees", "Fees", "ti-truck-delivery", "Delivery, handling and express fees", () => import("./pages/fees.js")],
   ["areas", "Service areas", "ti-map-pin", "Villages and order on/off", () => import("./pages/areas.js")],
