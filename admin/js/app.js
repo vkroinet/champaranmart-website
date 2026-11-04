@@ -9,7 +9,7 @@ export const SECTIONS = [
   ["banners", "Banners", "ti-photo", "Home page banners", null],
   ["coupons", "Coupons", "ti-ticket", "Coupon codes", null],
   ["customers", "Customers", "ti-users", "Customer list and report", null],
-  ["fees", "Fees", "ti-truck-delivery", "Delivery, handling and express fees", null],
+  ["fees", "Fees", "ti-truck-delivery", "Delivery, handling and express fees", () => import("./pages/fees.js")],
   ["areas", "Service areas", "ti-map-pin", "Villages and order on/off", null],
   ["delivery", "Delivery boys", "ti-motorbike", "Delivery accounts", null],
   ["reports", "Reports", "ti-chart-bar", "Sales and profit", null],
