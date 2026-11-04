@@ -1,6 +1,16 @@
 import { auth, db, onAuthStateChanged, signOut, doc, getDoc, setDoc, collection, query, where, onSnapshot } from "./fb.js";
 import { $, esc, toast, errMsg, confirmBox } from "./ui.js";
 
+// Clickjacking guard: this page must never run inside another site's frame (GitHub Pages can't send X-Frame-Options).
+if (window.top !== window.self) {
+  document.documentElement.style.display = "none";
+  try {
+    window.top.location.href = window.self.location.href;
+  } catch (e) {
+    /* cross-origin parent: the page stays hidden */
+  }
+}
+
 // key -> [label, icon, subtitle, loader]. A null loader means "coming soon".
 export const SECTIONS = [
   ["orders", "Orders", "ti-receipt-2", "View orders and update status", () => import("./pages/orders.js")],
