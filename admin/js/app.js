@@ -12,8 +12,8 @@ export const SECTIONS = [
   ["fees", "Fees", "ti-truck-delivery", "Delivery, handling and express fees", () => import("./pages/fees.js")],
   ["areas", "Service areas", "ti-map-pin", "Villages and order on/off", () => import("./pages/areas.js")],
   ["delivery", "Delivery boys", "ti-motorbike", "Delivery accounts", () => import("./pages/delivery.js")],
-  ["reports", "Reports", "ti-chart-bar", "Sales and profit", null],
-  ["offers", "Send offer", "ti-bell", "Send offers to customers", null]
+  ["reports", "Reports", "ti-chart-bar", "Sales and profit", () => import("./pages/reports.js")],
+  ["offers", "Send offer", "ti-bell", "Send offers to customers", () => import("./pages/offers.js")]
 ];
 
 let view = $("#view");
