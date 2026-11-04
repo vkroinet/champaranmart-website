@@ -6,11 +6,11 @@ export const SECTIONS = [
   ["orders", "Orders", "ti-receipt-2", "View orders and update status", () => import("./pages/orders.js")],
   ["products", "Products", "ti-package", "Products, prices and stock", () => import("./pages/products.js")],
   ["categories", "Category", "ti-category", "Categories and their photos", () => import("./pages/categories.js")],
-  ["banners", "Banners", "ti-photo", "Home page banners", null],
+  ["banners", "Banners", "ti-photo", "Home page banners", () => import("./pages/banners.js")],
   ["coupons", "Coupons", "ti-ticket", "Coupon codes", null],
   ["customers", "Customers", "ti-users", "Customer list and report", null],
   ["fees", "Fees", "ti-truck-delivery", "Delivery, handling and express fees", () => import("./pages/fees.js")],
-  ["areas", "Service areas", "ti-map-pin", "Villages and order on/off", null],
+  ["areas", "Service areas", "ti-map-pin", "Villages and order on/off", () => import("./pages/areas.js")],
   ["delivery", "Delivery boys", "ti-motorbike", "Delivery accounts", null],
   ["reports", "Reports", "ti-chart-bar", "Sales and profit", null],
   ["offers", "Send offer", "ti-bell", "Send offers to customers", null]
