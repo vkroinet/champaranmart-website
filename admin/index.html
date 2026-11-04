@@ -13,20 +13,26 @@
 <link rel="stylesheet" href="/admin/admin.css">
 </head>
 <body>
-<header class="bar" id="bar" hidden>
-  <div class="wrap">
-    <div class="row">
-      <a class="brand" href="#/"><img src="/favicon-96.png" alt="" width="34" height="34">Champaran Mart <span class="pill">Admin</span></a>
-      <div class="sp"></div>
-      <span class="who" id="who"></span>
-      <a class="btn ghost sm" href="/" target="_blank" rel="noopener" aria-label="Open website"><i class="ti ti-external-link"></i><span class="lbl"> Website</span></a>
-      <button class="btn ghost sm" id="logout" type="button" aria-label="Logout"><i class="ti ti-logout"></i><span class="lbl"> Logout</span></button>
-    </div>
-    <nav class="tabs" id="tabs" aria-label="Admin sections"></nav>
-  </div>
-</header>
+<div class="boot" id="boot">Checking your login…</div>
 
-<main class="wrap" id="view"><div class="loading">Checking your login…</div></main>
+<div class="app" id="app">
+  <aside class="side" id="side">
+    <a class="brand" href="#/"><img src="/favicon-96.png" alt="" width="34" height="34"><span>Champaran Mart</span></a>
+    <nav id="nav" aria-label="Admin sections"></nav>
+  </aside>
+  <div class="col">
+    <header class="top" id="top">
+      <form class="search" id="search" role="search"><i class="ti ti-search"></i><input id="q" type="search" placeholder="Search order no. or phone" aria-label="Search orders" autocomplete="off"></form>
+      <div class="sp"></div>
+      <label class="shop" id="shop" title="Turn this off to stop all new orders"><span class="sw"><input type="checkbox" id="shopOn" checked><span></span></span><span id="shopLbl">Taking orders</span></label>
+      <div class="av" id="who" title="">A</div>
+    </header>
+    <main class="content" id="view"></main>
+  </div>
+</div>
+
+<nav class="mbar" id="mbar" aria-label="Main"></nav>
+<div class="sheet" id="sheet"><div class="sh" id="sheetBody"></div></div>
 
 <script type="module" src="/admin/js/app.js"></script>
 </body>
