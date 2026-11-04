@@ -85,7 +85,7 @@ export function render(view) {
           if (!(await confirmBox(`Delete "${c.name}"?`, { okText: "Yes, delete", danger: true }))) return;
           await deleteDoc(doc(db, "categories", c.id));
           if (c.imageUrl && c.imageUrl.includes("/o/categories%2F")) deleteObject(storageRef(storage, c.imageUrl)).catch(() => {});
-          toast("Category delete ho gayi");
+          toast("Category deleted");
           m.close();
         } catch (e) {
           toast(errMsg(e), "err");
