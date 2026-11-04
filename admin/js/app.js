@@ -8,15 +8,15 @@ export const SECTIONS = [
   ["categories", "Category", "ti-category", "Categories and their photos", () => import("./pages/categories.js")],
   ["banners", "Banners", "ti-photo", "Home page banners", () => import("./pages/banners.js")],
   ["coupons", "Coupons", "ti-ticket", "Coupon codes", null],
-  ["customers", "Customers", "ti-users", "Customer list and report", null],
+  ["customers", "Customers", "ti-users", "Customer list and report", () => import("./pages/customers.js")],
   ["fees", "Fees", "ti-truck-delivery", "Delivery, handling and express fees", () => import("./pages/fees.js")],
   ["areas", "Service areas", "ti-map-pin", "Villages and order on/off", () => import("./pages/areas.js")],
-  ["delivery", "Delivery boys", "ti-motorbike", "Delivery accounts", null],
+  ["delivery", "Delivery boys", "ti-motorbike", "Delivery accounts", () => import("./pages/delivery.js")],
   ["reports", "Reports", "ti-chart-bar", "Sales and profit", null],
   ["offers", "Send offer", "ti-bell", "Send offers to customers", null]
 ];
 
-const view = $("#view");
+let view = $("#view");
 let cleanup = null;
 let started = false;
 
@@ -43,7 +43,13 @@ async function show() {
     }
     cleanup = null;
   }
-  view.innerHTML = `<div class="loading">Loading…</div>`;
+  // Pages attach click/change listeners to their container. A fresh container for every page keeps the
+  // previous page's listeners from also reacting to clicks on the new page.
+  const fresh = view.cloneNode(false);
+  view.replaceWith(fresh);
+  view = fresh;
+  const v = fresh; // this page's own container (the global may point at a newer page by the time loading ends)
+  v.innerHTML = `<div class="loading">Loading…</div>`;
   window.scrollTo(0, 0);
   try {
     let loader;
@@ -54,12 +60,12 @@ async function show() {
       loader = s && s[4];
     }
     if (!loader) {
-      view.innerHTML = `<div class="empty"><i class="ti ti-tools"></i><h1>Coming soon</h1><p>This section is still being built. Please use the app for now.</p><a class="btn" href="#/">Dashboard</a></div>`;
+      v.innerHTML = `<div class="empty"><i class="ti ti-tools"></i><h1>Coming soon</h1><p>This section is still being built. Please use the app for now.</p><a class="btn" href="#/">Dashboard</a></div>`;
       return;
     }
     const mod = await loader();
     const mine = key;
-    const result = await mod.render(view, { sections: SECTIONS });
+    const result = await mod.render(v, { sections: SECTIONS });
     if (route() !== mine) {
       if (typeof result === "function") result();
       return;
@@ -67,7 +73,7 @@ async function show() {
     cleanup = typeof result === "function" ? result : null;
   } catch (e) {
     console.error(e);
-    view.innerHTML = `<div class="empty"><i class="ti ti-alert-triangle"></i><p>${esc(errMsg(e))}</p></div>`;
+    v.innerHTML = `<div class="empty"><i class="ti ti-alert-triangle"></i><p>${esc(errMsg(e))}</p></div>`;
   }
 }
 
