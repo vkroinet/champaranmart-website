@@ -6,7 +6,11 @@ export const isUnpaidOnline = (o) => o.paymentStatus === "pending" || o.paymentS
 const DAY = 86400000;
 const OPEN = ["placed", "packed", "out_for_delivery"];
 const STATUS = { placed: "Placed", packed: "Packed", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" };
-const orderNo = (o) => String(o.orderNumber || 0).padStart(5, "0");
+// Customers' phones write order fields, so the number is forced to a plain number before it goes into HTML.
+const orderNo = (o) => {
+  const n = Math.trunc(Number(o.orderNumber));
+  return String(Number.isFinite(n) ? n : 0).padStart(5, "0");
+};
 const norm = (s) => String(s || "").trim().replace(/\s+/g, " ").toLowerCase();
 const num = (n) => Number(n) || 0;
 

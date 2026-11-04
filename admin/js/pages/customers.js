@@ -19,7 +19,11 @@ const PERIODS = [
   ["custom", "Custom"]
 ];
 const STATUS = { placed: "Placed", packed: "Packed", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" };
-const orderNo = (o) => String(o.orderNumber || 0).padStart(5, "0");
+// Customers' phones write order fields, so the number is forced to a plain number before it goes into HTML.
+const orderNo = (o) => {
+  const n = Math.trunc(Number(o.orderNumber));
+  return String(Number.isFinite(n) ? n : 0).padStart(5, "0");
+};
 const counts = (o) => o.status !== "cancelled"; // spending counts every order except cancelled
 
 function range(period, from, to) {

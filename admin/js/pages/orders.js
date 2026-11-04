@@ -15,7 +15,16 @@ const NEXT = { placed: "packed", packed: "out_for_delivery", out_for_delivery: "
 const NEXT_LABEL = { packed: "Mark as packed", out_for_delivery: "Send out for delivery", delivered: "Mark as delivered" };
 const TS_FIELD = { packed: "packedAt", out_for_delivery: "outForDeliveryAt", delivered: "deliveredAt" };
 
-const orderNo = (o) => String(o.orderNumber || 0).padStart(5, "0");
+// Order fields are written by customers' phones, so anything shown as HTML must be turned into a plain
+// number (or passed through esc()) first. Never put a raw order field into a template.
+const orderNo = (o) => {
+  const n = Math.trunc(Number(o.orderNumber));
+  return String(Number.isFinite(n) ? n : 0).padStart(5, "0");
+};
+const qtyOf = (i) => {
+  const n = Number(i.qty);
+  return Number.isFinite(n) ? n : 0;
+};
 const itemsTotal = (o) => (o.items || []).reduce((a, i) => a + (Number(i.price) || 0) * (Number(i.qty) || 0), 0);
 const handlingOf = (o) =>
   o.handlingFee != null && o.handlingFee >= 0
@@ -52,8 +61,10 @@ async function setStatus(o, status) {
           const idx = line.variantId
             ? variants.findIndex((v) => v.id === line.variantId)
             : variants.findIndex((v) => v.label === line.unit);
-          if (idx >= 0) variants = variants.map((v, k) => (k === idx ? { ...v, stock: (v.stock || 0) + line.qty } : v));
-          else plain += line.qty;
+          // qty comes from the customer's phone: only a real, non-negative number may touch the stock.
+          const back = Math.max(0, qtyOf(line));
+          if (idx >= 0) variants = variants.map((v, k) => (k === idx ? { ...v, stock: (Number(v.stock) || 0) + back } : v));
+          else plain += back;
         });
       const upd = {};
       if (plain > 0) upd.stock = increment(plain);
@@ -72,7 +83,7 @@ function printBill(o) {
   }
   const rows = (o.items || [])
     .map(
-      (i) => `<tr><td>${esc(i.name)}<br><small>${esc(i.unit)} x ${i.qty}</small></td><td style="text-align:right">${money(i.price * i.qty)}</td></tr>`
+      (i) => `<tr><td>${esc(i.name)}<br><small>${esc(i.unit)} x ${qtyOf(i)}</small></td><td style="text-align:right">${money(Number(i.price) * qtyOf(i))}</td></tr>`
     )
     .join("");
   w.document.write(`<!doctype html><title>Bill ${orderNo(o)}</title>
@@ -86,8 +97,17 @@ function printBill(o) {
   <tr><td>Handling</td><td style="text-align:right">${money(handlingOf(o))}</td></tr>
   <tr><td><b>Total</b></td><td style="text-align:right"><b>${money(o.totalAmount)}</b></td></tr></table>
   <p style="text-align:center">${esc(payLabel(o))}<br>Thank you!</p>
-  <script>window.onload=function(){window.print()}<\/script></body>`);
+</body>`);
   w.document.close();
+  // Printing is started from here, not from a script inside the bill (the page's security policy blocks inline scripts).
+  setTimeout(() => {
+    try {
+      w.focus();
+      w.print();
+    } catch (e) {
+      /* the pop-up was closed */
+    }
+  }, 400);
 }
 
 export function render(view) {
@@ -183,7 +203,7 @@ export function render(view) {
         <span class="badge b-muted">${esc(payLabel(o))}</span></div>
       <dl class="kv">
         <dt>Customer</dt><dd>${esc(o.customerName)}${o.customerPhone ? ` · <a href="tel:${esc(o.customerPhone)}">${esc(o.customerPhone)}</a>` : ""}</dd>
-        <dt>Address</dt><dd>${esc(o.address)}${o.lat ? ` <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${o.lat},${o.lng}">Map</a>` : ""}</dd>
+        <dt>Address</dt><dd>${esc(o.address)}${Number.isFinite(Number(o.lat)) && Number(o.lat) !== 0 && Number.isFinite(Number(o.lng)) ? ` <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${Number(o.lat)},${Number(o.lng)}">Map</a>` : ""}</dd>
         <dt>Placed</dt><dd>${esc(fmtDate(o.createdAt))}</dd>
         ${o.packedAt ? `<dt>Packed</dt><dd>${esc(fmtDate(o.packedAt))}</dd>` : ""}
         ${o.outForDeliveryAt ? `<dt>Out for delivery</dt><dd>${esc(fmtDate(o.outForDeliveryAt))}</dd>` : ""}
@@ -193,7 +213,7 @@ export function render(view) {
       <div class="items">${(o.items || [])
         .map(
           (i) => `<div class="it">${i.imageUrl ? `<img class="thumb" src="${esc(i.imageUrl)}" alt="">` : '<div class="thumb ph"><i class="ti ti-photo"></i></div>'}
-          <div class="nm"><b>${esc(i.name)}</b><div class="s muted">${esc(i.unit)} · ${money(i.price)} x ${i.qty}</div></div><b>${money(i.price * i.qty)}</b></div>`
+          <div class="nm"><b>${esc(i.name)}</b><div class="s muted">${esc(i.unit)} · ${money(i.price)} x ${qtyOf(i)}</div></div><b>${money(Number(i.price) * qtyOf(i))}</b></div>`
         )
         .join("")}</div>
       <div class="bill">
