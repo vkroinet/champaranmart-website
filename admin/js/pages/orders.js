@@ -106,6 +106,19 @@ export function render(view) {
     </div>
     <div class="list" id="list"><div class="loading">Loading orders…</div></div>`;
 
+  // Coming from the top search box (search text) or a dashboard card (#/orders/<id> opens that order).
+  let pendingId = decodeURIComponent(location.hash.split("/")[2] || "");
+  try {
+    const saved = sessionStorage.getItem("adminOrderSearch");
+    if (saved) {
+      search = saved;
+      $("#q", view).value = saved;
+      sessionStorage.removeItem("adminOrderSearch");
+    }
+  } catch (e) {
+    /* storage can be blocked */
+  }
+
   function counts() {
     const c = { all: orders.length };
     Object.keys(STATUS).forEach((k) => (c[k] = orders.filter((o) => o.status === k).length));
@@ -271,6 +284,11 @@ export function render(view) {
       orders = snap.docs.map((d) => ({ ...d.data(), id: d.id })).filter((o) => !isUnpaidOnline(o));
       drawList();
       if (detail) drawDetail();
+      if (pendingId) {
+        const id = pendingId;
+        pendingId = "";
+        openOrder(id);
+      }
     },
     (err) => {
       $("#list", view).innerHTML = `<div class="empty"><i class="ti ti-alert-triangle"></i>${esc(errMsg(err))}</div>`;
