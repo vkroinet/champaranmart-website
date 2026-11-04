@@ -1,5 +1,5 @@
-import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from "./fb.js";
-import { $, esc, toast, errMsg } from "./ui.js";
+import { auth, db, onAuthStateChanged, signOut, doc, getDoc, setDoc, collection, query, where, onSnapshot } from "./fb.js";
+import { $, esc, toast, errMsg, confirmBox } from "./ui.js";
 
 // key -> [label, icon, subtitle, loader]. A null loader means "coming soon".
 export const SECTIONS = [
@@ -16,25 +16,59 @@ export const SECTIONS = [
   ["offers", "Send offer", "ti-bell", "Send offers to customers", () => import("./pages/offers.js")]
 ];
 
+// How the left menu is grouped (section keys from SECTIONS).
+const GROUPS = [
+  ["Sell", ["orders", "customers", "delivery"]],
+  ["Catalog", ["products", "categories", "banners", "coupons"]],
+  ["Store", ["fees", "areas"]],
+  ["Marketing", ["offers", "reports"]]
+];
+const MOBILE_MAIN = ["", "orders", "products", "customers"]; // bottom bar; "More" opens the full list
+
+const sec = (key) => SECTIONS.find((s) => s[0] === key);
 let view = $("#view");
 let cleanup = null;
 let started = false;
+let current = "";
+let newOrders = 0;
 
 function route() {
   return (location.hash.replace(/^#\/?/, "") || "").split("/")[0];
 }
 
-function drawTabs(current) {
-  $("#tabs").innerHTML =
-    `<a href="#/" class="${current === "" ? "on" : ""}">Dashboard</a>` +
-    SECTIONS.filter((s) => s[4])
-      .map((s) => `<a href="#/${s[0]}" class="${current === s[0] ? "on" : ""}">${esc(s[1])}</a>`)
-      .join("");
+const badge = (key) => (key === "orders" && newOrders ? `<span class="n">${newOrders > 99 ? "99+" : newOrders}</span>` : "");
+const link = (key, cls = "") => {
+  const s = key === "" ? ["", "Dashboard", "ti-layout-dashboard"] : sec(key);
+  return `<a href="#/${s[0]}" class="${current === key ? "on" : ""} ${cls}"><i class="ti ${s[2]}"></i>${esc(s[1])}${badge(key)}</a>`;
+};
+
+function drawNav() {
+  $("#nav").innerHTML =
+    link("") +
+    GROUPS.map(([title, keys]) => `<h4>${esc(title)}</h4>${keys.map((k) => link(k)).join("")}`).join("") +
+    `<h4>Account</h4>
+     <a href="/" target="_blank" rel="noopener"><i class="ti ti-external-link"></i>Open website</a>
+     <button class="nl" type="button" data-act="logout"><i class="ti ti-logout"></i>Logout</button>`;
+
+  const mb = MOBILE_MAIN.map((k) => {
+    const s = k === "" ? ["", "Home", "ti-layout-dashboard"] : sec(k);
+    return `<a href="#/${s[0]}" class="${current === k ? "on" : ""}"><i class="ti ${s[2]}"></i>${esc(k === "" ? "Home" : s[1])}${badge(k)}</a>`;
+  }).join("");
+  const moreOn = current !== "" && !MOBILE_MAIN.includes(current);
+  $("#mbar").innerHTML = mb + `<button type="button" class="${moreOn ? "on" : ""}" data-act="more"><i class="ti ti-menu-2"></i>More</button>`;
+
+  $("#sheetBody").innerHTML =
+    GROUPS.map(([title, keys]) => `<h4>${esc(title)}</h4>${keys.map((k) => link(k)).join("")}`).join("") +
+    `<h4>Account</h4>
+     <a href="/" target="_blank" rel="noopener"><i class="ti ti-external-link"></i>Open website</a>
+     <button class="nl" type="button" data-act="logout"><i class="ti ti-logout"></i>Logout</button>`;
 }
 
 async function show() {
   const key = route();
-  drawTabs(key);
+  current = key;
+  drawNav();
+  $("#sheet").classList.remove("open");
   if (cleanup) {
     try {
       cleanup();
@@ -56,7 +90,7 @@ async function show() {
     if (key === "") {
       loader = () => import("./pages/dashboard.js");
     } else {
-      const s = SECTIONS.find((x) => x[0] === key);
+      const s = sec(key);
       loader = s && s[4];
     }
     if (!loader) {
@@ -77,16 +111,88 @@ async function show() {
   }
 }
 
+const isUnpaidOnline = (o) => o.paymentStatus === "pending" || o.paymentStatus === "failed";
+
+function watchShell() {
+  // Orders waiting (status "placed"), shown as a badge on Orders.
+  onSnapshot(
+    query(collection(db, "orders"), where("status", "==", "placed")),
+    (s) => {
+      const n = s.docs.filter((d) => !isUnpaidOnline(d.data())).length;
+      if (n !== newOrders) {
+        newOrders = n;
+        drawNav();
+      }
+    },
+    () => {}
+  );
+  // The shop-wide "taking orders" switch (same setting as Service areas).
+  onSnapshot(
+    doc(db, "settings", "service"),
+    (s) => {
+      const on = s.exists() ? s.data().ordersEnabled !== false : true;
+      $("#shopOn").checked = on;
+      $("#shopLbl").textContent = on ? "Taking orders" : "Orders paused";
+    },
+    () => {}
+  );
+}
+
 async function start(user) {
-  $("#who").textContent = user.email || "";
-  $("#bar").hidden = false;
+  const email = user.email || "";
+  $("#who").textContent = (email || "A").trim().charAt(0).toUpperCase();
+  $("#who").title = email;
+  const boot = $("#boot");
+  if (boot) boot.remove();
+  $("#app").classList.add("ready");
   if (!started) {
     started = true;
     window.addEventListener("hashchange", show);
-    $("#logout").onclick = async () => {
-      await signOut(auth);
-      location.replace("/login/");
-    };
+
+    document.addEventListener("click", async (e) => {
+      const act = e.target.closest("[data-act]");
+      if (act) {
+        if (act.dataset.act === "logout") {
+          await signOut(auth);
+          location.replace("/login/");
+        } else if (act.dataset.act === "more") {
+          $("#sheet").classList.add("open");
+        }
+        return;
+      }
+      if (e.target.id === "sheet") $("#sheet").classList.remove("open");
+    });
+
+    $("#search").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const q = $("#q").value.trim();
+      if (!q) return;
+      try {
+        sessionStorage.setItem("adminOrderSearch", q);
+      } catch (err) {
+        /* the search just won't be pre-filled */
+      }
+      $("#q").value = "";
+      if (route() === "orders") show();
+      else location.hash = "#/orders";
+    });
+
+    $("#shopOn").addEventListener("change", async (e) => {
+      const box = e.target;
+      const on = box.checked;
+      if (!on && !(await confirmBox("Stop all new orders? Customers will see that the shop is closed until you turn this back on.", { okText: "Yes, stop orders", danger: true }))) {
+        box.checked = true;
+        return;
+      }
+      try {
+        await setDoc(doc(db, "settings", "service"), { ordersEnabled: on }, { merge: true });
+        toast(on ? "Taking orders: ON" : "Taking orders: OFF");
+      } catch (err) {
+        box.checked = !on;
+        toast(errMsg(err), "err");
+      }
+    });
+    watchShell();
   }
   show();
 }
@@ -105,7 +211,7 @@ onAuthStateChanged(auth, async (user) => {
     }
     start(user);
   } catch (e) {
-    view.innerHTML = `<div class="empty"><i class="ti ti-alert-triangle"></i><p>${esc(errMsg(e))}</p><a class="btn" href="/login/">Login page</a></div>`;
+    $("#boot").innerHTML = `<div class="empty"><i class="ti ti-alert-triangle"></i><p>${esc(errMsg(e))}</p><a class="btn" href="/login/">Login page</a></div>`;
     toast(errMsg(e), "err");
   }
 });
