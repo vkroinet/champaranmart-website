@@ -29,6 +29,8 @@ export function render(view) {
   let search = "";
   let catFilter = "";
   let stockFilter = "";
+  let sortBy = "";
+  const DAY = 24 * 60 * 60 * 1000;
 
   view.innerHTML = `
     <div class="ph"><h1>Products</h1><div class="sp"></div><button class="btn" id="add" type="button"><i class="ti ti-plus"></i> New product</button></div>
@@ -36,6 +38,7 @@ export function render(view) {
       <input class="in" id="q" type="search" placeholder="Name, brand or SKU" aria-label="Search products">
       <select class="in" id="cf" style="max-width:200px" aria-label="Category"><option value="">All categories</option></select>
       <select class="in" id="sf" style="max-width:170px" aria-label="Stock"><option value="">All</option><option value="low">Low stock</option><option value="out">Out of stock</option><option value="off">Inactive (hidden)</option></select>
+      <select class="in" id="so" style="max-width:170px" aria-label="Sort"><option value="">Default order</option><option value="az">A to Z</option><option value="za">Z to A</option><option value="7d">Last 7 days</option><option value="1m">Last 1 month</option><option value="exp">Expiry date</option></select>
     </div>
     <div class="list" id="list"><div class="loading">Loading products…</div></div>`;
 
@@ -43,8 +46,12 @@ export function render(view) {
 
   function drawList() {
     const q = search.trim().toLowerCase();
+    const now = Date.now();
     const rows = products
       .filter((p) => {
+        if (sortBy === "7d" && now - (p.createdAt || 0) > 7 * DAY) return false;
+        if (sortBy === "1m" && now - (p.createdAt || 0) > 30 * DAY) return false;
+        if (sortBy === "exp" && !(p.expiryDate > 0)) return false;
         if (q && !`${p.name} ${p.brand} ${p.sku}`.toLowerCase().includes(q)) return false;
         if (catFilter && ![p.categoryId, ...(p.extraCategoryIds || [])].includes(catFilter)) return false;
         const s = totalStock(p);
@@ -53,7 +60,12 @@ export function render(view) {
         if (stockFilter === "off") return p.active === false;
         return true;
       })
-      .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0) || (a.name || "").localeCompare(b.name || ""));
+      .sort((a, b) => {
+        if (sortBy === "az") return (a.name || "").localeCompare(b.name || "");
+        if (sortBy === "za") return (b.name || "").localeCompare(a.name || "");
+        if (sortBy === "exp") return (a.expiryDate || 0) - (b.expiryDate || 0);
+        return (a.displayOrder || 0) - (b.displayOrder || 0) || (a.name || "").localeCompare(b.name || "");
+      });
     const list = $("#list", view);
     if (!rows.length) {
       list.innerHTML = `<div class="empty"><i class="ti ti-package-off"></i>No products found.</div>`;
@@ -323,12 +335,24 @@ export function render(view) {
     search = e.target.value;
     drawList();
   };
+  // Picking a filter empties the search box first, otherwise the old text plus the new filter shows a blank list.
+  const clearSearch = () => {
+    search = "";
+    $("#q", view).value = "";
+  };
   $("#cf", view).onchange = (e) => {
+    clearSearch();
     catFilter = e.target.value;
     drawList();
   };
   $("#sf", view).onchange = (e) => {
+    clearSearch();
     stockFilter = e.target.value;
+    drawList();
+  };
+  $("#so", view).onchange = (e) => {
+    clearSearch();
+    sortBy = e.target.value;
     drawList();
   };
 

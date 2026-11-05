@@ -8,9 +8,15 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "c" + Date.now() + 
 
 export function render(view) {
   let cats = [];
+  let search = "";
+  let typeFilter = "";
 
   view.innerHTML = `
     <div class="ph"><h1>Categories</h1><div class="sp"></div><button class="btn" id="add" type="button"><i class="ti ti-plus"></i> New category</button></div>
+    <div class="toolbar">
+      <input class="in" id="q" type="search" placeholder="Search category" aria-label="Search categories">
+      <select class="in" id="tf" style="max-width:200px" aria-label="Show"><option value="">All</option><option value="main">Main categories</option><option value="sub">Sub-categories</option><option value="off">Inactive</option></select>
+    </div>
     <div class="list" id="list"><div class="loading">Loading categories…</div></div>`;
 
   const parentName = (c) => (c.parentCategory && c.parentCategory !== MAIN ? (cats.find((x) => x.id === c.parentCategory) || {}).name || "" : "");
@@ -21,7 +27,20 @@ export function render(view) {
       list.innerHTML = `<div class="empty"><i class="ti ti-category"></i>No categories yet.</div>`;
       return;
     }
-    list.innerHTML = cats
+    const q = search.trim().toLowerCase();
+    const isMain = (c) => !c.parentCategory || c.parentCategory === MAIN;
+    const rows = cats.filter((c) => {
+      if (q && !(c.name || "").toLowerCase().includes(q)) return false;
+      if (typeFilter === "main") return isMain(c);
+      if (typeFilter === "sub") return !isMain(c);
+      if (typeFilter === "off") return c.active === false;
+      return true;
+    });
+    if (!rows.length) {
+      list.innerHTML = `<div class="empty"><i class="ti ti-category"></i>No categories found.</div>`;
+      return;
+    }
+    list.innerHTML = rows
       .map(
         (c) => `<div class="row-card" data-id="${esc(c.id)}" tabindex="0" role="button">
         ${c.imageUrl ? `<img class="thumb" src="${esc(c.imageUrl)}" alt="" loading="lazy">` : '<div class="thumb ph"><i class="ti ti-photo"></i></div>'}
@@ -142,6 +161,18 @@ export function render(view) {
     const row = e.target.closest(".row-card[data-id]");
     if (row) openForm(cats.find((c) => c.id === row.dataset.id));
   });
+
+  $("#q", view).oninput = (e) => {
+    search = e.target.value;
+    drawList();
+  };
+  // Picking a filter empties the search box first, otherwise the old text plus the new filter shows a blank list.
+  $("#tf", view).onchange = (e) => {
+    search = "";
+    $("#q", view).value = "";
+    typeFilter = e.target.value;
+    drawList();
+  };
 
   const unsub = onSnapshot(
     collection(db, "categories"),
