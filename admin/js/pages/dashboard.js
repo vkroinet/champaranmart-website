@@ -54,7 +54,7 @@ export function render(view) {
     const open = real.filter((o) => OPEN.includes(o.status));
     const placed = open.filter((o) => o.status === "placed").length;
     const outNow = open.filter((o) => o.status === "out_for_delivery").length;
-    const needAgent = open.filter((o) => o.status !== "placed" && !o.deliveryAgentId).length;
+    const needAgent = open.filter((o) => o.status !== "placed" && o.deliveryType !== "pickup" && !o.deliveryAgentId).length;
     const avg = today.length ? Math.round(salesToday / today.length) : 0;
 
     let outOfStock = 0;
@@ -103,7 +103,7 @@ export function render(view) {
                   .map(
                     (o) => `<div class="oc"><div class="r"><b>#${orderNo(o)}</b><span class="badge b-${esc(o.status)}">${esc(STATUS[o.status] || o.status)}</span></div>
               <div style="margin-top:6px;font-weight:600;overflow-wrap:anywhere">${esc(o.customerName || "-")}</div>
-              <div class="tiny">${esc(ago(o.createdAt))}${o.deliveryType === "express" ? " · Express" : ""}${o.deliveryAgentName ? " · " + esc(o.deliveryAgentName) : ""}</div>
+              <div class="tiny">${esc(ago(o.createdAt))}${o.deliveryType === "express" ? " · Express" : ""}${o.deliveryType === "pickup" ? " · Pickup" : ""}${o.deliveryAgentName ? " · " + esc(o.deliveryAgentName) : ""}</div>
               <div style="margin-top:8px;display:flex;align-items:center"><b>${money(o.totalAmount)}</b><a class="btn sm" style="margin-left:auto" href="#/orders/${esc(o.id)}">Open</a></div></div>`
                   )
                   .join("")}</div>`

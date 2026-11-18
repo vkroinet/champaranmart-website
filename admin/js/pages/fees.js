@@ -2,7 +2,7 @@ import { db, doc, onSnapshot, setDoc } from "../fb.js";
 import { $, esc, toast, errMsg, busy } from "../ui.js";
 
 // Same defaults as the app (FeeSettings.kt). They apply until the admin saves their own.
-const DEFAULTS = { deliveryFee: 25, freeDeliveryAbove: 99, handlingFee: 5, expressFee: 30, expressEnabled: true };
+const DEFAULTS = { deliveryFee: 25, freeDeliveryAbove: 99, handlingFee: 5, expressFee: 30, expressEnabled: true, upiEnabled: true, codEnabled: true };
 const ref = () => doc(db, "settings", "fees");
 
 export function render(view) {
@@ -33,6 +33,12 @@ export function render(view) {
         <label class="chk" style="margin-bottom:14px"><span class="sw"><input type="checkbox" id="f-exp-on" ${f.expressEnabled ? "checked" : ""}><span></span></span><span id="exp-label"></span></label>
         <div class="field" style="max-width:260px"><label class="f" for="f-exp">Express fee (₹)</label><input class="in" id="f-exp" inputmode="decimal" value="${esc(f.expressFee)}"></div>
       </div>
+      <div class="card" style="max-width:640px;margin-bottom:16px">
+        <h2 style="font-size:17px;margin:0 0 4px">Payment methods</h2>
+        <p class="hint" style="margin:0 0 12px">Choose which payment options customers see at checkout. A change applies at once, to new orders. At least one must stay ON.</p>
+        <label class="chk" style="margin-bottom:10px"><span class="sw"><input type="checkbox" id="f-upi-on" ${f.upiEnabled !== false ? "checked" : ""}><span></span></span><span id="upi-label"></span></label>
+        <label class="chk"><span class="sw"><input type="checkbox" id="f-cod-on" ${f.codEnabled !== false ? "checked" : ""}><span></span></span><span id="cod-label"></span></label>
+      </div>
       <div class="card" style="max-width:640px;margin-bottom:16px;background:var(--surface)">
         <div class="hint" style="margin:0 0 6px;font-weight:700">What customers will see</div>
         <div id="preview" style="white-space:pre-line;font-size:14px"></div>
@@ -52,6 +58,8 @@ export function render(view) {
   function renderLabel() {
     const on = $("#f-exp-on", view).checked;
     $("#exp-label", view).textContent = on ? "Express delivery is ON" : "Express delivery is OFF";
+    $("#upi-label", view).textContent = $("#f-upi-on", view).checked ? "UPI (online payment) is ON" : "UPI (online payment) is OFF";
+    $("#cod-label", view).textContent = $("#f-cod-on", view).checked ? "Cash on Delivery is ON" : "Cash on Delivery is OFF";
   }
 
   function renderPreview() {
@@ -63,11 +71,39 @@ export function render(view) {
     if (hand != null && !isNaN(hand)) lines.push(hand > 0 ? `Handling: ${fmt(hand)} on every order.` : "Handling: no handling fee.");
     if (!on) lines.push("Express: switched OFF. Customers only see standard delivery.");
     else if (exp != null && !isNaN(exp)) lines.push(`Express: ${fmt(exp)} delivery fee, always.`);
+    if (!$("#f-upi-on", view).checked) lines.push("UPI: switched OFF. Customers can only pay Cash on Delivery.");
+    if (!$("#f-cod-on", view).checked) lines.push("Cash on Delivery: switched OFF. Customers must pay online (UPI).");
     $("#preview", view).textContent = lines.join("\n");
   }
 
   view.addEventListener("input", (e) => {
     if (e.target.matches(".in")) renderPreview();
+  });
+
+  // UPI and Cash on Delivery apply at once as well; turning off the last one left ON is refused.
+  view.addEventListener("change", async (e) => {
+    const payment = e.target.matches("#f-upi-on") ? "upiEnabled" : e.target.matches("#f-cod-on") ? "codEnabled" : null;
+    if (!payment) return;
+    const box = e.target;
+    const on = box.checked;
+    const other = $(payment === "upiEnabled" ? "#f-cod-on" : "#f-upi-on", view);
+    if (!on && !other.checked) {
+      box.checked = true;
+      toast("At least one payment method must stay ON.", "err");
+      return;
+    }
+    renderLabel();
+    renderPreview();
+    try {
+      await setDoc(ref(), { [payment]: on }, { merge: true });
+      saved[payment] = on;
+      toast(`${payment === "upiEnabled" ? "UPI payment" : "Cash on Delivery"} ${on ? "ON" : "OFF"}`);
+    } catch (err) {
+      box.checked = saved[payment] !== false;
+      renderLabel();
+      renderPreview();
+      toast(errMsg(err), "err");
+    }
   });
 
   view.addEventListener("change", async (e) => {
@@ -108,7 +144,7 @@ export function render(view) {
       const expressEnabled = $("#f-exp-on", view).checked;
       try {
         await setDoc(ref(), { deliveryFee, freeDeliveryAbove, handlingFee, expressFee, expressEnabled }, { merge: true });
-        saved = { deliveryFee, freeDeliveryAbove, handlingFee, expressFee, expressEnabled };
+        saved = { ...saved, deliveryFee, freeDeliveryAbove, handlingFee, expressFee, expressEnabled };
         toast("Fees saved");
       } catch (e2) {
         err.textContent = errMsg(e2);

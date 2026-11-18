@@ -1,5 +1,5 @@
 import {
-  db, collection, query, orderBy, limit, onSnapshot, doc, updateDoc, runTransaction, increment, getDocs, where
+  db, storage, storageRef, getDownloadURL, collection, query, orderBy, limit, onSnapshot, doc, updateDoc, runTransaction, increment, getDocs, where
 } from "../fb.js";
 import { $, $$, esc, money, fmtDate, modal, confirmBox, toast, errMsg, busy } from "../ui.js";
 import { isUnpaidOnline } from "./dashboard.js";
@@ -171,7 +171,7 @@ export function render(view) {
         (o) => `<div class="row-card" data-id="${esc(o.id)}" tabindex="0" role="button">
         <i class="ti ti-receipt-2" style="font-size:22px;color:var(--brand)"></i>
         <div><div class="t">#${orderNo(o)} · ${esc(o.customerName || "Customer")}</div>
-          <div class="s">${(o.items || []).length} ${(o.items || []).length === 1 ? "item" : "items"} · ${esc(fmtDate(o.createdAt))}${o.deliveryType === "express" ? " · Express" : ""}</div></div>
+          <div class="s">${(o.items || []).length} ${(o.items || []).length === 1 ? "item" : "items"} · ${esc(fmtDate(o.createdAt))}${o.deliveryType === "express" ? " · Express" : ""}${o.deliveryType === "pickup" ? " · Pickup" : ""}</div></div>
         <div class="r"><b>${money(o.totalAmount)}</b>
           <span class="badge b-muted">${esc(payLabel(o))}</span>
           <span class="badge b-${esc(o.status)}">${esc(STATUS[o.status] || o.status)}</span></div>
@@ -196,10 +196,13 @@ export function render(view) {
     if (!detail || !o) return;
     const ag = await loadAgents();
     if (!detail || openId !== o.id) return;
-    const next = NEXT[o.status];
+    const pickup = o.deliveryType === "pickup";
+    // An order the customer collects from the shop goes placed -> packed -> delivered (collected): no delivery boy.
+    const next = pickup && o.status === "packed" ? "delivered" : NEXT[o.status];
     detail.body.innerHTML = `
       <div class="steps"><span class="badge b-${esc(o.status)}">${esc(STATUS[o.status] || o.status)}</span>
         ${o.deliveryType === "express" ? '<span class="badge b-warn">Express</span>' : ""}
+        ${pickup ? '<span class="badge b-ok">Pickup</span>' : ""}
         <span class="badge b-muted">${esc(payLabel(o))}</span></div>
       <dl class="kv">
         <dt>Customer</dt><dd>${esc(o.customerName)}${o.customerPhone ? ` · <a href="tel:${esc(o.customerPhone)}">${esc(o.customerPhone)}</a>` : ""}</dd>
@@ -222,7 +225,12 @@ export function render(view) {
         <div><span>Handling fee</span><span>${money(handlingOf(o))}</span></div>
         <div class="tot"><span>Total</span><span>${money(o.totalAmount)}</span></div>
       </div>
-      <div class="field" style="margin-top:16px">
+      ${
+        o.status === "delivered" && typeof o.deliveryPhotoPath === "string" && o.deliveryPhotoPath.startsWith("deliveryProofs/")
+          ? '<div class="field" style="margin-top:16px"><label class="f">Delivery photo</label><div id="dphoto" class="hint">Loading photo…</div></div>'
+          : ""
+      }
+      <div class="field" style="margin-top:16px"${pickup ? " hidden" : ""}>
         <label class="f" for="agent">Delivery boy</label>
         <select class="in" id="agent"><option value="">Unassigned</option>
           ${ag.map((a) => `<option value="${esc(a.id)}" ${o.deliveryAgentId === a.id ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select>
@@ -231,8 +239,20 @@ export function render(view) {
     detail.footer.innerHTML = `
       <button class="btn ghost" type="button" data-print><i class="ti ti-printer"></i> Bill</button>
       ${o.status !== "cancelled" && o.status !== "delivered" ? '<button class="btn ghost" type="button" data-cancel style="color:var(--err)">Cancel order</button>' : ""}
-      ${next ? `<button class="btn" type="button" data-next="${next}">${esc(NEXT_LABEL[next])}</button>` : ""}`;
+      ${next ? `<button class="btn" type="button" data-next="${next}">${esc(pickup && next === "delivered" ? "Mark as collected" : NEXT_LABEL[next])}</button>` : ""}`;
 
+    // The photo the delivery boy took at hand-over. Only the path is stored on the order; Storage lets admins read it.
+    const dp = $("#dphoto", detail.body);
+    if (dp)
+      getDownloadURL(storageRef(storage, o.deliveryPhotoPath))
+        .then((url) => {
+          if (!detail || openId !== o.id) return;
+          dp.className = "";
+          dp.innerHTML = `<a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="Delivery photo" style="display:block;max-width:100%;max-height:320px;border-radius:10px;border:1px solid var(--line,#ddd)"></a><div class="hint">Click the photo to open it full size.</div>`;
+        })
+        .catch(() => {
+          if (dp.isConnected) dp.textContent = "The delivery photo could not be loaded.";
+        });
     $("#agent", detail.body).onchange = async (e) => {
       const id = e.target.value;
       const a = ag.find((x) => x.id === id);
