@@ -226,6 +226,9 @@
     margin-top:24px; display:inline-flex; flex-direction:column; gap:2px;
     background:var(--ink); color:var(--paper); padding:10px 22px; border-radius:10px;
   }
+  a.store-badge{text-decoration:none; transition:transform .15s ease, opacity .15s ease;}
+  a.store-badge:hover{transform:translateY(-1px); opacity:.92;}
+  a.store-badge:focus-visible{outline:3px solid var(--brand, #E63946); outline-offset:3px;}
   .store-badge small{font-size:10.5px; letter-spacing:.12em; font-weight:700; opacity:.8;}
   .store-badge strong{font-size:15px;}
   @media (min-width:1000px){ .shots{overflow-x:visible;} }
@@ -322,7 +325,7 @@
         <figcaption class="shot-cap"><span class="shot-num">5</span><div><b>Choose delivery</b><span>Standard or Express, pay by UPI or cash</span></div></figcaption>
       </figure>
     </div>
-    <div class="store-badge" aria-label="Google Play, coming soon"><small>GET IT ON</small><strong>Google Play &middot; coming soon</strong></div>
+    <a class="store-badge" href="https://play.google.com/store/apps/details?id=com.champaranmart.app" target="_blank" rel="noopener" aria-label="Get Champaran Mart on Google Play"><small>GET IT ON</small><strong>Google Play</strong></a>
   </div>
 </section>
 
