@@ -19,6 +19,7 @@ export const SECTIONS = [
   ["banners", "Banners", "ti-photo", "Home page banners", () => import("./pages/banners.js")],
   ["coupons", "Coupons", "ti-ticket", "Coupon codes", () => import("./pages/coupons.js")],
   ["customers", "Customers", "ti-users", "Customer list and report", () => import("./pages/customers.js")],
+  ["users", "Users", "ti-user-circle", "All users: free delivery, history, delete", () => import("./pages/users.js")],
   ["fees", "Fees", "ti-truck-delivery", "Delivery, handling and express fees", () => import("./pages/fees.js")],
   ["areas", "Service areas", "ti-map-pin", "Villages and order on/off", () => import("./pages/areas.js")],
   ["delivery", "Delivery boys", "ti-motorbike", "Delivery accounts", () => import("./pages/delivery.js")],
@@ -29,7 +30,7 @@ export const SECTIONS = [
 
 // How the left menu is grouped (section keys from SECTIONS).
 const GROUPS = [
-  ["Sell", ["orders", "customers", "delivery"]],
+  ["Sell", ["orders", "customers", "users", "delivery"]],
   ["Catalog", ["products", "categories", "banners", "coupons"]],
   ["Store", ["fees", "areas", "appupdate"]],
   ["Marketing", ["offers", "reports"]]
