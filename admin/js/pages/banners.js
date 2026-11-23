@@ -1,4 +1,4 @@
-import { db, storage, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, storageRef, uploadBytes, getDownloadURL, deleteObject } from "../fb.js";
+import { db, storage, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, writeBatch, storageRef, uploadBytes, getDownloadURL, deleteObject } from "../fb.js";
 import { $, $$, esc, modal, confirmBox, toast, errMsg, busy } from "../ui.js";
 
 const HERO = "hero";
@@ -68,10 +68,13 @@ export function render(view) {
           list.length
             ? list
                 .map(
-                  (b, i) => `<div class="row-card" data-id="${esc(b.id)}" tabindex="0" role="button">
+                  (b, i) => `<div class="row-card" data-id="${esc(b.id)}" data-place="${key}" tabindex="0" role="button" style="grid-template-columns:auto auto 1fr auto">
+          <span class="dragh" draggable="true" title="Drag to change the order" aria-label="Drag to change the order" style="cursor:grab;color:var(--muted);font-size:20px;padding:6px 2px;touch-action:none"><i class="ti ti-grip-vertical"></i></span>
           ${b.imageUrl ? `<img class="thumb" style="width:110px;height:50px;object-fit:cover" src="${esc(b.imageUrl)}" alt="" loading="lazy">` : `<div class="thumb ph" style="width:110px;height:50px"><i class="ti ti-photo"></i></div>`}
           <div><div class="t">${esc(label(b, i))}</div><div class="s">${esc(b.subtitle || "")}${b.active === false ? (b.subtitle ? " · " : "") + "Hidden in the app" : ""}</div></div>
-          <div class="r"><label class="sw" title="Show in the app"><input type="checkbox" data-sw="${esc(b.id)}" ${b.active !== false ? "checked" : ""} aria-label="Show this banner in the app"><span></span></label></div></div>`
+          <div class="r"><button class="btn ghost sm" type="button" data-mv="${esc(b.id)}" data-dir="-1" title="Move earlier" aria-label="Move earlier" ${i === 0 ? "disabled" : ""}><i class="ti ti-arrow-up"></i></button>
+            <button class="btn ghost sm" type="button" data-mv="${esc(b.id)}" data-dir="1" title="Move later" aria-label="Move later" ${i === list.length - 1 ? "disabled" : ""}><i class="ti ti-arrow-down"></i></button>
+            <label class="sw" title="Show in the app"><input type="checkbox" data-sw="${esc(b.id)}" ${b.active !== false ? "checked" : ""} aria-label="Show this banner in the app"><span></span></label></div></div>`
                 )
                 .join("")
             : '<div class="hint" style="padding:8px 0">No banners here.</div>'
@@ -169,9 +172,96 @@ export function render(view) {
       });
   }
 
+  /** Moves one banner to a new place inside its group (Main / Ad) and saves the new order numbers. */
+  async function reorder(placement, fromId, toId, after) {
+    const list = banners.filter((b) => (b.placement || HERO) === placement);
+    const from = list.findIndex((b) => b.id === fromId);
+    if (from < 0) return;
+    const [moved] = list.splice(from, 1);
+    let to = toId ? list.findIndex((b) => b.id === toId) : list.length;
+    if (to < 0) to = list.length;
+    if (toId && after) to += 1;
+    list.splice(to, 0, moved);
+    const batch = writeBatch(db);
+    let changes = 0;
+    list.forEach((b, i) => {
+      if (b.order !== i) {
+        batch.update(doc(db, "banners", b.id), { order: i });
+        b.order = i;
+        changes++;
+      }
+    });
+    banners.sort((a, b) => (a.order || 0) - (b.order || 0));
+    draw();
+    if (!changes) return;
+    try {
+      await batch.commit();
+      toast("Banner order saved");
+    } catch (err) {
+      toast(errMsg(err), "err");
+    }
+  }
+
+  // Drag by the handle (computer) ...
+  let dragId = null;
+  view.addEventListener("dragstart", (e) => {
+    const h = e.target.closest && e.target.closest(".dragh");
+    if (!h) return;
+    const row = h.closest(".row-card");
+    dragId = row.dataset.id;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", dragId);
+    if (e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(row, 20, 20);
+    row.style.opacity = "0.5";
+  });
+  view.addEventListener("dragend", () => {
+    dragId = null;
+    $$(".row-card", view).forEach((r) => {
+      r.style.opacity = "";
+      r.style.boxShadow = "";
+    });
+  });
+  view.addEventListener("dragover", (e) => {
+    const row = e.target.closest && e.target.closest(".row-card[data-id]");
+    if (!dragId || !row) return;
+    const from = banners.find((b) => b.id === dragId);
+    if (!from || (from.placement || HERO) !== row.dataset.place) return; // only inside the same group
+    e.preventDefault();
+    const r = row.getBoundingClientRect();
+    const after = e.clientY > r.top + r.height / 2;
+    $$(".row-card", view).forEach((x) => (x.style.boxShadow = ""));
+    row.style.boxShadow = after ? "0 3px 0 var(--brand)" : "0 -3px 0 var(--brand)";
+  });
+  view.addEventListener("drop", (e) => {
+    const row = e.target.closest && e.target.closest(".row-card[data-id]");
+    if (!dragId || !row) return;
+    e.preventDefault();
+    const r = row.getBoundingClientRect();
+    const after = e.clientY > r.top + r.height / 2;
+    const from = banners.find((b) => b.id === dragId);
+    const id = dragId;
+    dragId = null;
+    if (from && (from.placement || HERO) === row.dataset.place && id !== row.dataset.id) reorder(row.dataset.place, id, row.dataset.id, after);
+  });
+
+  // ... or the up / down buttons (also works on a phone).
+  view.addEventListener("click", (e) => {
+    const mv = e.target.closest("[data-mv]");
+    if (!mv) return;
+    e.stopPropagation();
+    const b = banners.find((x) => x.id === mv.dataset.mv);
+    if (!b) return;
+    const place = b.placement || HERO;
+    const list = banners.filter((x) => (x.placement || HERO) === place);
+    const i = list.findIndex((x) => x.id === b.id);
+    const j = i + Number(mv.dataset.dir);
+    if (j < 0 || j >= list.length) return;
+    reorder(place, b.id, list[j].id, Number(mv.dataset.dir) > 0);
+  }, true);
+
   view.addEventListener("click", (e) => {
     if (e.target.closest("#add")) return openForm(null);
-    if (e.target.closest(".sw")) return;
+    if (e.target.closest(".sw") || e.target.closest("[data-mv]") || e.target.closest(".dragh")) return;
     const row = e.target.closest(".row-card[data-id]");
     if (row) openForm(banners.find((x) => x.id === row.dataset.id));
   });

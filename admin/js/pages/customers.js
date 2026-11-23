@@ -57,7 +57,16 @@ export function render(view) {
   let shown = [];
 
   view.innerHTML = `
-    <div class="ph"><h1>Customers</h1><div class="sp"></div><button class="btn ghost" id="csv" type="button"><i class="ti ti-download"></i> Download CSV</button></div>
+    <style>
+      @keyframes nwbRing{0%{transform:scale(1);opacity:.9}70%,100%{transform:scale(2.6);opacity:0}}
+      @keyframes nwbPop{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+      .nwb{position:absolute;top:-7px;right:-6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;padding:2px 9px 2px 6px;border-radius:999px;background:#E63946;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.5px;line-height:1.4;animation:nwbPop 1.6s ease-in-out infinite}
+      .nwb i{position:relative;width:6px;height:6px;border-radius:50%;background:#fff;display:inline-block}
+      .nwb i:after{content:"";position:absolute;inset:0;border-radius:50%;background:#fff;animation:nwbRing 1.4s ease-out infinite}
+      .nwb-count{display:inline-block;margin-left:10px;padding:3px 11px;border-radius:999px;background:#E63946;color:#fff;font-size:12px;font-weight:700;vertical-align:middle}
+      @media (prefers-reduced-motion:reduce){.nwb,.nwb i:after{animation:none}}
+    </style>
+    <div class="ph"><h1>Customers<span id="newcount"></span></h1><div class="sp"></div><button class="btn ghost" id="csv" type="button"><i class="ti ti-download"></i> Download CSV</button></div>
     <div class="chips" id="periods" style="margin-bottom:10px">${PERIODS.map(([k, t]) => `<button class="chip ${k === period ? "on" : ""}" type="button" data-p="${k}">${t}</button>`).join("")}</div>
     <div id="custom" style="display:none;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
       <input class="in" type="date" id="d-from" style="max-width:170px" aria-label="From date"> <span class="hint" style="margin:0">to</span>
@@ -73,6 +82,8 @@ export function render(view) {
     <div class="list" id="list"><div class="loading">Loading customers…</div></div>`;
 
   const userById = () => new Map(users.map((u) => [u.id, u]));
+  const dayStart = () => new Date().setHours(0, 0, 0, 0);
+  const joinedToday = (u) => Number(u.createdAt) >= dayStart();
 
   function compute() {
     const [a, b] = range(period, from, to);
@@ -94,13 +105,17 @@ export function render(view) {
         name: (u && u.name) || latest.customerName || "-",
         phone: (u && u.phone) || latest.customerPhone || "",
         village: (u && u.village) || "",
+        joined: (u && Number(u.createdAt)) || 0,
         count: list.length,
         spent: list.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0),
         last: latest.createdAt || 0
       });
     }
-    if (includeNone) {
-      for (const u of users) if (!byCust.has(u.id)) stats.push({ uid: u.id, name: u.name || "-", phone: u.phone || "", village: u.village || "", count: 0, spent: 0, last: 0 });
+    // Customers who joined today always show (with a NEW badge), even before their first order.
+    for (const u of users) {
+      if (!byCust.has(u.id) && (includeNone || joinedToday(u))) {
+        stats.push({ uid: u.id, name: u.name || "-", phone: u.phone || "", village: u.village || "", joined: Number(u.createdAt) || 0, count: 0, spent: 0, last: 0 });
+      }
     }
     const ql = q.trim().toLowerCase();
     shown = stats
@@ -115,6 +130,8 @@ export function render(view) {
     const withOrders = shown.filter((s) => s.count > 0).length;
     const totalOrders = shown.reduce((s, c) => s + c.count, 0);
     const totalSales = shown.reduce((s, c) => s + c.spent, 0);
+    const newToday = users.filter(joinedToday).length;
+    $("#newcount", view).innerHTML = newToday ? `<span class="nwb-count">${newToday} new today</span>` : "";
     $("#sum", view).innerHTML = `
       <div class="metric"><small>Customers who ordered</small><b>${withOrders}</b></div>
       <div class="metric"><small>Orders</small><b>${totalOrders}</b></div>
@@ -126,11 +143,16 @@ export function render(view) {
     }
     list.innerHTML = shown
       .map(
-        (s) => `<div class="row-card" data-id="${esc(s.uid)}" tabindex="0" role="button">
+        (s) => {
+          // A customer who joined today gets a NEW badge pinned to the card's top-right corner; the name keeps clear of it.
+          const isNew = s.joined >= dayStart();
+          return `<div class="row-card" data-id="${esc(s.uid)}" tabindex="0" role="button" style="position:relative">
+        ${isNew ? '<span class="nwb"><i></i>NEW</span>' : ""}
         <div style="width:40px;height:40px;border-radius:50%;background:var(--surface);display:grid;place-items:center;flex:none;font-weight:700;color:var(--brand)">${esc((s.name || "?").trim().charAt(0).toUpperCase())}</div>
-        <div><div class="t">${esc(s.name)}</div><div class="s">${esc(s.phone)}${s.village ? " · " + esc(s.village) : ""}</div>
+        <div style="min-width:0${isNew ? ";padding-right:56px" : ""}"><div class="t">${esc(s.name)}</div><div class="s">${esc(s.phone)}${s.village ? " · " + esc(s.village) : ""}</div>
           <div class="s">${s.count ? `${s.count} ${s.count === 1 ? "order" : "orders"} · last ${esc(fmtDay(s.last))}` : "No orders in this period"}</div></div>
-        <div class="r"><b>${money(s.spent)}</b></div></div>`
+        <div class="r"><b>${money(s.spent)}</b></div></div>`;
+        }
       )
       .join("");
   }
