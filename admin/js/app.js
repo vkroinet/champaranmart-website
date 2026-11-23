@@ -23,14 +23,15 @@ export const SECTIONS = [
   ["areas", "Service areas", "ti-map-pin", "Villages and order on/off", () => import("./pages/areas.js")],
   ["delivery", "Delivery boys", "ti-motorbike", "Delivery accounts", () => import("./pages/delivery.js")],
   ["reports", "Reports", "ti-chart-bar", "Sales and profit", () => import("./pages/reports.js")],
-  ["offers", "Send offer", "ti-bell", "Send offers to customers", () => import("./pages/offers.js")]
+  ["offers", "Send offer", "ti-bell", "Send offers to customers", () => import("./pages/offers.js")],
+  ["appupdate", "App update", "ti-download", "Make customers update the app", () => import("./pages/appupdate.js")]
 ];
 
 // How the left menu is grouped (section keys from SECTIONS).
 const GROUPS = [
   ["Sell", ["orders", "customers", "delivery"]],
   ["Catalog", ["products", "categories", "banners", "coupons"]],
-  ["Store", ["fees", "areas"]],
+  ["Store", ["fees", "areas", "appupdate"]],
   ["Marketing", ["offers", "reports"]]
 ];
 const MOBILE_MAIN = ["", "orders", "products", "customers"]; // bottom bar; "More" opens the full list
