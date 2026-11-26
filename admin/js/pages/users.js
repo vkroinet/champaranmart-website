@@ -6,6 +6,9 @@ import { isUnpaidOnline } from "./dashboard.js";
 // "Free delivery" switch, the customer's order history, and delete. A customer who joined today gets a NEW badge.
 const STATUS = { placed: "Placed", packed: "Packed", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" };
 const NOT_PROVIDED = "Not provided";
+// The "Free delivery" switch is hidden for now (the owner's choice); the feature and its code are all still here.
+// Set this to true to show it again. Customers already set to free delivery stay free.
+const SHOW_FREE_DELIVERY = false;
 // Phones write order and profile fields, so every number is forced to a plain number before it goes into HTML.
 const orderNo = (o) => {
   const n = Math.trunc(Number(o.orderNumber));
@@ -177,7 +180,7 @@ export function render(view) {
             ${count(u) === 0 ? '<span class="utag z">No order yet</span>' : `<span class="utag o">${count(u)} ${count(u) === 1 ? "order" : "orders"}</span>`}
           </div>
           <div class="uact">
-            <label class="chk" style="margin:0 12px 0 0"><span class="sw"><input type="checkbox" data-free="${esc(u.id)}" ${u.freeDelivery === true ? "checked" : ""}><span></span></span>Free delivery</label>
+            ${SHOW_FREE_DELIVERY ? `<label class="chk" style="margin:0 12px 0 0"><span class="sw"><input type="checkbox" data-free="${esc(u.id)}" ${u.freeDelivery === true ? "checked" : ""}><span></span></span>Free delivery</label>` : ""}
             <button class="btn ghost sm" type="button" data-history="${esc(u.id)}"><i class="ti ti-history"></i> History</button>
             <button class="btn ghost sm" type="button" data-del="${esc(u.id)}" style="color:var(--err)"><i class="ti ti-trash"></i> Delete</button>
           </div>
