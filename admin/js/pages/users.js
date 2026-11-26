@@ -32,13 +32,16 @@ const fmtLogin = (ms) => {
 };
 const isRealOrder = (o) => o.status !== "cancelled"; // a cancelled order does not count as an order
 
-/** The address as one line: the saved address is an object (line1, city) in the app; older data may be plain text. */
+/** The address as one line: the saved address is an object (line1, city, pincode) in the app; older data may be plain text. */
 function addressLine(u) {
   const a = u.address;
   if (!a) return "";
   if (typeof a === "string") return a.trim();
-  return [a.line1, a.city].map((x) => String(x || "").trim()).filter(Boolean).join(", ");
+  return [a.line1, a.city, a.pincode].map((x) => String(x || "").trim()).filter(Boolean).join(", ");
 }
+
+/** A phone number reduced to digits and "+", safe to put in a tel: link. */
+const dialNo = (p) => String(p || "").replace(/[^\d+]/g, "");
 
 /** Cloud Function errors arrive as "functions/<code>" with the server's own sentence as the message. */
 function fnErr(e) {
@@ -51,6 +54,7 @@ function fnErr(e) {
 export function render(view) {
   let users = [];
   let orders = [];
+  let allOrders = []; // every order (also unpaid online ones): only used to find a customer's last delivery address
   let gotUsers = false;
   let gotOrders = false;
   let q = "";
@@ -60,7 +64,7 @@ export function render(view) {
     <style>
       @keyframes usrRing{0%{transform:scale(1);opacity:.9}70%,100%{transform:scale(2.6);opacity:0}}
       @keyframes usrPop{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-      .unew{position:absolute;top:-7px;right:-6px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;padding:2px 9px 2px 6px;border-radius:999px;background:#E63946;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.5px;line-height:1.4;animation:usrPop 1.6s ease-in-out infinite}
+      .unew{position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;padding:2px 9px 2px 6px;border-radius:999px;background:#E63946;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.5px;line-height:1.4;animation:usrPop 1.6s ease-in-out infinite}
       .unew i{position:relative;width:6px;height:6px;border-radius:50%;background:#fff;display:inline-block}
       .unew i:after{content:"";position:absolute;inset:0;border-radius:50%;background:#fff;animation:usrRing 1.4s ease-out infinite}
       .ucount{display:inline-block;margin-left:10px;padding:3px 11px;border-radius:999px;background:#E63946;color:#fff;font-size:12px;font-weight:700;vertical-align:middle;white-space:nowrap}
@@ -78,6 +82,9 @@ export function render(view) {
       .utop{display:flex;gap:12px;align-items:center}
       .uav{width:40px;height:40px;border-radius:50%;background:var(--surface);display:grid;place-items:center;flex:none;font-weight:700;color:var(--brand)}
       .uline{font-size:13px;color:var(--muted);margin-top:4px;word-break:break-word}
+      .uphone{display:flex;align-items:center;gap:8px;margin-top:2px}
+      .ucall{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1F7A3D;color:#fff;text-decoration:none;font-size:16px;flex:none}
+      .ucall:hover{filter:brightness(1.1)}
       .uact{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
       @media (prefers-reduced-motion:reduce){.unew,.unew i:after{animation:none}}
     </style>
@@ -91,6 +98,19 @@ export function render(view) {
     const m = new Map();
     for (const o of orders) if (isRealOrder(o)) m.set(o.customerId, (m.get(o.customerId) || 0) + 1);
     return m;
+  }
+
+  // The delivery address of each customer's most recent order, for customers who never saved an address on their profile.
+  function lastOrderAddresses() {
+    const latest = new Map();
+    for (const o of allOrders) {
+      const a = String(o.address || "").trim();
+      if (!a) continue;
+      const t = Number(o.createdAt) || 0;
+      const prev = latest.get(o.customerId);
+      if (!prev || t >= prev.t) latest.set(o.customerId, { t, a });
+    }
+    return latest;
   }
 
   const inFilter = (u, key, n, today, week) =>
@@ -130,21 +150,27 @@ export function render(view) {
       list.innerHTML = `<div class="empty"><i class="ti ti-users"></i>No users found.</div>`;
       return;
     }
+    const lastAddr = lastOrderAddresses();
     list.innerHTML = shown
       .map((u) => {
         const isNew = Number(u.createdAt) >= today;
         const name = u.name || NOT_PROVIDED;
-        const addr = addressLine(u);
+        // The saved profile address; if there is none, the delivery address of their latest order.
+        const fromOrder = lastAddr.get(u.id);
+        const addr = addressLine(u) || (fromOrder ? `${fromOrder.a} (from last order)` : "");
+        const village = u.village ? (u.villageId === "unlisted" ? `${u.village} (not on your village list)` : u.village) : "";
+        const dial = dialNo(u.phone);
         return `<div class="ucard" data-uid="${esc(u.id)}">
           ${isNew ? '<span class="unew"><i></i>NEW</span>' : ""}
           <div class="utop">
             <div class="uav">${esc(name.trim().charAt(0).toUpperCase() || "?")}</div>
-            <div style="min-width:0${isNew ? ";padding-right:56px" : ""}">
+            <div style="min-width:0${isNew ? ";padding-right:64px" : ""}">
               <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(name)}</div>
-              <div class="hint" style="margin:0">${esc(u.phone || NOT_PROVIDED)}</div>
+              <div class="uphone"><span class="hint" style="margin:0">${esc(u.phone || NOT_PROVIDED)}</span>${dial ? `<a class="ucall" href="tel:${esc(dial)}" title="Call ${esc(name)}" aria-label="Call ${esc(name)}"><i class="ti ti-phone"></i></a>` : ""}</div>
             </div>
           </div>
           <div class="uline">${esc(u.email || NOT_PROVIDED)}</div>
+          <div class="uline">Village: ${esc(village || NOT_PROVIDED)}</div>
           <div class="uline">Address: ${esc(addr || NOT_PROVIDED)}</div>
           <div class="uact" style="margin-top:10px;gap:6px">
             <span class="utag l"><i class="ti ti-login" style="margin-right:3px"></i>First login: ${Number(u.createdAt) > 0 ? esc(fmtLogin(Number(u.createdAt))) : "-"}</span>
@@ -262,7 +288,8 @@ export function render(view) {
     collection(db, "orders"),
     (s) => {
       gotOrders = true;
-      orders = s.docs.map((d) => ({ ...d.data(), id: d.id })).filter((o) => !isUnpaidOnline(o));
+      allOrders = s.docs.map((d) => ({ ...d.data(), id: d.id }));
+      orders = allOrders.filter((o) => !isUnpaidOnline(o));
       draw();
     },
     (err) => {
