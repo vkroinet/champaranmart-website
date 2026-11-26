@@ -23,8 +23,33 @@ const FILTERS = [
   ["new", "New today"],
   ["week", "This week"],
   ["none", "Never ordered"],
-  ["ordered", "Ordered"]
+  ["ordered", "Ordered"],
+  ["inactive", "Inactive 7d+"],
+  ["notreminded", "Not reminded"],
+  ["reminded", "Reminded"]
 ];
+
+// "Order now" reminder. Who can be reminded: a customer who never ordered (and joined over a day ago) or has not ordered
+// for a week, who has notifications on and the app installed, and was not reminded in the last week. The server
+// (Cloud Function sendCustomerReminders) applies the same rules itself and has the last word. Keep these numbers in step
+// with it and with ReminderRules in the Android app.
+const COOLDOWN_DAYS = 7;
+const NEW_CUSTOMER_WAIT_DAYS = 1;
+const INACTIVE_DAYS = 7;
+const REMINDER_DEFAULT = "Hi {name}, fresh groceries are one tap away. Order now and get them delivered to your door.";
+const needsReminder = (u, n, last, now) =>
+  n === 0 ? !(Number(u.createdAt) > 0) || now - Number(u.createdAt) >= NEW_CUSTOMER_WAIT_DAYS * 86400000 : now - last >= INACTIVE_DAYS * 86400000;
+const wasReminded = (u) => Number(u.lastReminderAt) > 0;
+const cooldownActive = (u, now) => wasReminded(u) && now - Number(u.lastReminderAt) < COOLDOWN_DAYS * 86400000;
+const orderedAfterReminder = (u, last) => wasReminded(u) && last > Number(u.lastReminderAt);
+/** ready | off | no_app | cooldown | not_needed (joined today / ordered this week) */
+function reminderStatus(u, n, last, now) {
+  if (!needsReminder(u, n, last, now)) return "not_needed";
+  if (u.offersEnabled === false) return "off";
+  if (typeof u.fcmToken !== "string" || !u.fcmToken) return "no_app";
+  if (cooldownActive(u, now)) return "cooldown";
+  return "ready";
+}
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /** "24 Nov 2026, 10:42 AM" (English month and AM/PM, in the admin's own time zone). */
 const fmtLogin = (ms) => {
@@ -89,17 +114,38 @@ export function render(view) {
       .ucall{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1F7A3D;color:#fff;text-decoration:none;font-size:16px;flex:none}
       .ucall:hover{filter:brightness(1.1)}
       .uact{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+      .ustats{display:flex;gap:10px;margin-bottom:14px;max-width:420px}
+      .ustat{flex:1;border:1px solid var(--border);background:var(--card);border-radius:12px;padding:8px 10px;text-align:center;font-size:12px;color:var(--muted)}
+      .ustat b{display:block;font-size:18px;color:var(--ink)}
+      .ustat.g b{color:#1F7A3D}
+      .utag.r{background:#E8EEFB;color:#2F4A8F}
+      .utag.x{background:#EEEEEE;color:#5C5C5C}
+      .ubar{margin-bottom:14px}
+      .uprev{border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px;background:var(--surface);font-size:13px}
       @media (prefers-reduced-motion:reduce){.unew,.unew i:after{animation:none}}
     </style>
     <div class="ph"><h1>Users<span id="totalcount"></span><span id="newcount"></span></h1></div>
     <div style="margin-bottom:14px"><input class="in" id="q" placeholder="Search by name, mobile or email" style="max-width:360px" aria-label="Search users"></div>
+    <div class="ustats" id="rstats"></div>
     <div class="uchips" id="chips"></div>
+    <div class="ubar" id="rbar"></div>
     <div id="list"><div class="loading">Loading users…</div></div>`;
 
   // How many orders each customer has placed (cancelled ones do not count).
   function orderCounts() {
     const m = new Map();
     for (const o of orders) if (isRealOrder(o)) m.set(o.customerId, (m.get(o.customerId) || 0) + 1);
+    return m;
+  }
+
+  // When each customer last ordered (cancelled ones do not count): tells who has gone quiet.
+  function lastOrderTimes() {
+    const m = new Map();
+    for (const o of orders) {
+      if (!isRealOrder(o)) continue;
+      const t = Number(o.createdAt) || 0;
+      if (t > (m.get(o.customerId) || 0)) m.set(o.customerId, t);
+    }
     return m;
   }
 
@@ -116,19 +162,30 @@ export function render(view) {
     return latest;
   }
 
-  const inFilter = (u, key, n, today, week) =>
+  const inFilter = (u, key, n, last, today, week, now) =>
     key === "all" ||
     (key === "new" && Number(u.createdAt) >= today) ||
     (key === "week" && Number(u.createdAt) >= week) ||
     (key === "none" && n === 0) ||
-    (key === "ordered" && n > 0);
+    (key === "ordered" && n > 0) ||
+    (key === "inactive" && n > 0 && now - last >= INACTIVE_DAYS * DAY) ||
+    (key === "notreminded" && !wasReminded(u) && needsReminder(u, n, last, now)) ||
+    (key === "reminded" && wasReminded(u));
+
+  // The customers in the list on screen who can be reminded right now (kept for the Remind buttons).
+  let readyUids = [];
+  let shownUsers = [];
 
   function draw() {
     if (!gotUsers || !gotOrders) return;
+    const now = Date.now();
     const today = dayStart();
     const week = weekStart();
     const counts = orderCounts();
+    const lasts = lastOrderTimes();
     const count = (u) => counts.get(u.id) || 0;
+    const last = (u) => lasts.get(u.id) || 0;
+    const status = (u) => reminderStatus(u, count(u), last(u), now);
 
     const newToday = users.filter((u) => Number(u.createdAt) >= today).length;
     $("#totalcount", view).innerHTML = users.length ? `<span class="utotal">${users.length} total</span>` : "";
@@ -136,18 +193,28 @@ export function render(view) {
     // The chips with how many customers each holds (the search does not change these numbers).
     $("#chips", view).innerHTML = FILTERS.map(
       ([key, label]) =>
-        `<button class="uchip ${filter === key ? "on" : ""}" type="button" data-filter="${key}">${label}<span>${users.filter((u) => inFilter(u, key, count(u), today, week)).length}</span></button>`
+        `<button class="uchip ${filter === key ? "on" : ""}" type="button" data-filter="${key}">${label}<span>${users.filter((u) => inFilter(u, key, count(u), last(u), today, week, now)).length}</span></button>`
     ).join("");
+    // Reminder numbers (all customers): ready to remind now, already reminded, ordered after a reminder.
+    $("#rstats", view).innerHTML = `
+      <div class="ustat"><b>${users.filter((u) => status(u) === "ready").length}</b>Ready</div>
+      <div class="ustat"><b>${users.filter(wasReminded).length}</b>Reminded</div>
+      <div class="ustat g"><b>${users.filter((u) => orderedAfterReminder(u, last(u))).length}</b>Ordered after</div>`;
 
     const ql = q.trim().toLowerCase();
     const shown = users.filter(
       (u) =>
-        inFilter(u, filter, count(u), today, week) &&
+        inFilter(u, filter, count(u), last(u), today, week, now) &&
         (!ql ||
           String(u.name || "").toLowerCase().includes(ql) ||
           String(u.phone || "").toLowerCase().includes(ql) ||
           String(u.email || "").toLowerCase().includes(ql))
     );
+    shownUsers = shown;
+    readyUids = shown.filter((u) => status(u) === "ready").map((u) => u.id);
+    $("#rbar", view).innerHTML = readyUids.length
+      ? `<button class="btn" type="button" id="remindAll"><i class="ti ti-bell-ringing"></i> Remind ${readyUids.length} customer${readyUids.length === 1 ? "" : "s"} shown here</button>`
+      : "";
     const list = $("#list", view);
     if (!shown.length) {
       list.innerHTML = `<div class="empty"><i class="ti ti-users"></i>No users found.</div>`;
@@ -163,6 +230,25 @@ export function render(view) {
         const addr = addressLine(u) || (fromOrder ? `${fromOrder.a} (from last order)` : "");
         const village = u.village ? (u.villageId === "unlisted" ? `${u.village} (not on your village list)` : u.village) : "";
         const dial = dialNo(u.phone);
+        const st = status(u);
+        // Where this customer stands with the reminder: ordered after it / reminded when / can't be notified / not reminded yet.
+        let remTag = "";
+        if (orderedAfterReminder(u, last(u))) {
+          remTag = '<span class="utag o">Ordered after reminder</span>';
+        } else if (wasReminded(u)) {
+          let again = "";
+          if (cooldownActive(u, now)) {
+            const leftDays = Math.max(1, Math.ceil((COOLDOWN_DAYS * DAY - (now - Number(u.lastReminderAt))) / DAY));
+            again = leftDays <= 1 ? " · can remind again tomorrow" : ` · can remind again in ${leftDays} days`;
+          }
+          remTag = `<span class="utag r"><i class="ti ti-bell-ringing" style="margin-right:3px"></i>Reminded ${esc(fmtLogin(Number(u.lastReminderAt)))}${again}</span>`;
+        } else if (st === "off") {
+          remTag = '<span class="utag x">Notifications off</span>';
+        } else if (st === "no_app") {
+          remTag = '<span class="utag x">No app installed</span>';
+        } else if (st !== "not_needed") {
+          remTag = '<span class="utag z">Not reminded yet</span>';
+        }
         return `<div class="ucard" data-uid="${esc(u.id)}">
           ${isNew ? '<span class="unew"><i></i>NEW</span>' : ""}
           <div class="utop">
@@ -178,10 +264,12 @@ export function render(view) {
           <div class="uact" style="margin-top:10px;gap:6px">
             <span class="utag l"><i class="ti ti-login" style="margin-right:3px"></i>First login: ${Number(u.createdAt) > 0 ? esc(fmtLogin(Number(u.createdAt))) : "-"}</span>
             ${count(u) === 0 ? '<span class="utag z">No order yet</span>' : `<span class="utag o">${count(u)} ${count(u) === 1 ? "order" : "orders"}</span>`}
+            ${remTag}
           </div>
           <div class="uact">
             ${SHOW_FREE_DELIVERY ? `<label class="chk" style="margin:0 12px 0 0"><span class="sw"><input type="checkbox" data-free="${esc(u.id)}" ${u.freeDelivery === true ? "checked" : ""}><span></span></span>Free delivery</label>` : ""}
             <button class="btn ghost sm" type="button" data-history="${esc(u.id)}"><i class="ti ti-history"></i> History</button>
+            ${st === "ready" ? `<button class="btn ghost sm" type="button" data-remind="${esc(u.id)}"><i class="ti ti-bell-ringing"></i> Remind</button>` : ""}
             <button class="btn ghost sm" type="button" data-del="${esc(u.id)}" style="color:var(--err)"><i class="ti ti-trash"></i> Delete</button>
           </div>
         </div>`;
@@ -190,6 +278,73 @@ export function render(view) {
   }
 
   const find = (id) => users.find((u) => u.id === id);
+
+  // Asks for the message (with a preview) and sends the reminder. The server checks every customer again and skips anyone
+  // who must not get it, so this only ever offers customers who can be reminded now.
+  function showReminder(uids) {
+    if (!uids.length) return;
+    const targets = uids.map(find).filter(Boolean);
+    const firstName = String((targets[0] && targets[0].name) || "").trim().split(/\s+/)[0] || "there";
+
+    let summary = uids.length === 1 ? "Will send to 1 customer." : `Will send to ${uids.length} customers.`;
+    if (uids.length > 1) {
+      const now = Date.now();
+      const counts = orderCounts();
+      const lasts = lastOrderTimes();
+      const left = shownUsers.filter((u) => needsReminder(u, counts.get(u.id) || 0, lasts.get(u.id) || 0, now));
+      const st = (u) => reminderStatus(u, counts.get(u.id) || 0, lasts.get(u.id) || 0, now);
+      const off = left.filter((u) => st(u) === "off").length;
+      const noApp = left.filter((u) => st(u) === "no_app").length;
+      const cool = left.filter((u) => st(u) === "cooldown").length;
+      const why = [];
+      if (off) why.push(`${off} notifications off`);
+      if (noApp) why.push(`${noApp} no app installed`);
+      if (cool) why.push(`${cool} reminded in the last ${COOLDOWN_DAYS} days`);
+      if (why.length) summary += ` Skipped ${off + noApp + cool}: ${why.join(", ")}.`;
+    }
+
+    const m = modal({ title: "Send reminder" });
+    m.body.innerHTML = `
+      <label for="rmsg" class="hint" style="display:block;margin:0 0 4px">Message (use {name} for the customer's name)</label>
+      <textarea class="in" id="rmsg" rows="4" maxlength="240" style="width:100%">${esc(REMINDER_DEFAULT)}</textarea>
+      <div id="rerr" style="color:var(--err);font-size:13px;min-height:18px"></div>
+      <p class="hint">${esc(summary)}</p>
+      <div class="uprev"><div class="hint" style="margin:0">Preview on the customer's phone</div><div style="font-weight:700">Champaran Mart</div><div id="rprev"></div></div>`;
+    m.footer.innerHTML = `<button class="btn ghost" type="button" id="rcancel">Cancel</button><button class="btn" type="button" id="rsend"><i class="ti ti-bell-ringing"></i> Send reminder</button>`;
+    const ta = $("#rmsg", m.body);
+    const preview = () => {
+      $("#rprev", m.body).textContent = ta.value.split("{name}").join(firstName);
+    };
+    preview();
+    ta.addEventListener("input", () => {
+      $("#rerr", m.body).textContent = "";
+      preview();
+    });
+    $("#rcancel", m.footer).onclick = m.close;
+    const send = $("#rsend", m.footer);
+    send.onclick = async () => {
+      const message = ta.value.trim();
+      if (!message) {
+        $("#rerr", m.body).textContent = "Write a message first";
+        return;
+      }
+      send.disabled = true;
+      send.textContent = "Sending…";
+      try {
+        const res = await httpsCallable(functions, "sendCustomerReminders")({ uids, message });
+        const d = (res && res.data) || {};
+        const sentN = Number(d.sent) || 0;
+        const skippedN = Array.isArray(d.skipped) ? d.skipped.length : 0;
+        const base = sentN === 0 ? "No reminder was sent." : sentN === 1 ? "Reminder sent to 1 customer." : `Reminder sent to ${sentN} customers.`;
+        toast(base + (skippedN ? ` ${skippedN} skipped.` : ""));
+        m.close();
+      } catch (err) {
+        send.disabled = false;
+        send.innerHTML = '<i class="ti ti-bell-ringing"></i> Send reminder';
+        toast(fnErr(err), "err");
+      }
+    };
+  }
 
   async function showHistory(uid) {
     const u = find(uid) || {};
@@ -270,6 +425,9 @@ export function render(view) {
     }
     const h = e.target.closest("[data-history]");
     if (h) return showHistory(h.dataset.history);
+    const r = e.target.closest("[data-remind]");
+    if (r) return showReminder([r.dataset.remind]);
+    if (e.target.closest("#remindAll")) return showReminder(readyUids.slice());
     const d = e.target.closest("[data-del]");
     if (d) return deleteUser(d.dataset.del, d);
   });
