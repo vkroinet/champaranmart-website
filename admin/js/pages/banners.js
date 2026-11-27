@@ -6,9 +6,14 @@ const SECONDARY = "secondary";
 const ASPECT = 2.2; // width : height, same as the app (BANNER_ASPECT_RATIO)
 const OUT_W = 1320;
 const OUT_H = Math.round(OUT_W / ASPECT);
+const CAT_TOP = "category_top";
+const CAT_BOTTOM = "category_bottom";
+const isCat = (p) => p === CAT_TOP || p === CAT_BOTTOM;
 const PLACEMENTS = [
   [HERO, "Main banners", "Top of the Home page, under the search bar"],
-  [SECONDARY, "Ad banners", "Second carousel further down the Home page"]
+  [SECONDARY, "Ad banners", "Second carousel further down the Home page"],
+  [CAT_TOP, "Category pages: top", "Above the products on a category's page. Customers swipe through them, and they scroll away with the products."],
+  [CAT_BOTTOM, "Category pages: bottom", "Below the products on a category's page. Same swipe, scrolls with the products."]
 ];
 
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "b" + Date.now() + Math.random().toString(16).slice(2));
@@ -45,14 +50,18 @@ function cropToBanner(file) {
 
 export function render(view) {
   let banners = [];
+  let categories = []; // for the "category page" banners: which category's page the banner is on
   let got = false;
 
   view.innerHTML = `
     <div class="ph"><h1>Banners</h1><div class="sp"></div><button class="btn" id="add" type="button"><i class="ti ti-plus"></i> New banner</button></div>
-    <p class="hint" style="margin:-8px 0 16px;max-width:640px">Banners rotate on the Home page of the app. Use a wide photo, about ${OUT_W} × ${OUT_H} px. Other shapes are cropped from the centre.</p>
+    <p class="hint" style="margin:-8px 0 16px;max-width:640px">Banners rotate on the Home page of the app, and can also sit on a category's page (above or below its products). Use a wide photo, about ${OUT_W} × ${OUT_H} px. Other shapes are cropped from the centre.</p>
     <div id="body"><div class="loading">Loading banners…</div></div>`;
 
   const label = (b, i) => b.title || `Banner ${i + 1}`;
+  // A category banner says which category it is on (the name saved with it, else looked up by id).
+  const catNameOf = (b) => b.categoryName || (categories.find((c) => c.id === b.categoryId) || {}).name || "";
+  const whereOf = (b) => (isCat(b.placement) ? `Category: ${catNameOf(b) || "(none chosen)"}` : "");
 
   function draw() {
     if (!got) return;
@@ -71,7 +80,7 @@ export function render(view) {
                   (b, i) => `<div class="row-card" data-id="${esc(b.id)}" data-place="${key}" tabindex="0" role="button" style="grid-template-columns:auto auto 1fr auto">
           <span class="dragh" draggable="true" title="Drag to change the order" aria-label="Drag to change the order" style="cursor:grab;color:var(--muted);font-size:20px;padding:6px 2px;touch-action:none"><i class="ti ti-grip-vertical"></i></span>
           ${b.imageUrl ? `<img class="thumb" style="width:110px;height:50px;object-fit:cover" src="${esc(b.imageUrl)}" alt="" loading="lazy">` : `<div class="thumb ph" style="width:110px;height:50px"><i class="ti ti-photo"></i></div>`}
-          <div><div class="t">${esc(label(b, i))}</div><div class="s">${esc(b.subtitle || "")}${b.active === false ? (b.subtitle ? " · " : "") + "Hidden in the app" : ""}</div></div>
+          <div><div class="t">${esc(label(b, i))}</div><div class="s">${esc(b.subtitle || whereOf(b))}${b.active === false ? (b.subtitle || whereOf(b) ? " · " : "") + "Hidden in the app" : ""}</div></div>
           <div class="r"><button class="btn ghost sm" type="button" data-mv="${esc(b.id)}" data-dir="-1" title="Move earlier" aria-label="Move earlier" ${i === 0 ? "disabled" : ""}><i class="ti ti-arrow-up"></i></button>
             <button class="btn ghost sm" type="button" data-mv="${esc(b.id)}" data-dir="1" title="Move later" aria-label="Move later" ${i === list.length - 1 ? "disabled" : ""}><i class="ti ti-arrow-down"></i></button>
             <label class="sw" title="Show in the app"><input type="checkbox" data-sw="${esc(b.id)}" ${b.active !== false ? "checked" : ""} aria-label="Show this banner in the app"><span></span></label></div></div>`
@@ -96,7 +105,17 @@ export function render(view) {
       <div class="field"><label class="f" for="b-sub">Subtitle (optional)</label><input class="in" id="b-sub" value="${esc(b.subtitle)}" maxlength="120"></div>
       <div class="field"><label class="f" for="b-place">Show in</label>
         <select class="in" id="b-place">${PLACEMENTS.map(([k, t]) => `<option value="${k}" ${(b.placement || HERO) === k ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></div>
+      <div class="field" id="b-catfield" ${isCat(b.placement) ? "" : "hidden"}><label class="f" for="b-cat">Which category? *</label>
+        <select class="in" id="b-cat"><option value="">Choose a category…</option>${categories
+          .filter((c) => c.active !== false || c.id === b.categoryId)
+          .map((c) => `<option value="${esc(c.id)}" ${b.categoryId === c.id ? "selected" : ""}>${esc(c.name || "Category")}</option>`)
+          .join("")}</select>
+        <p class="hint" style="margin:6px 0 0">The banner appears only on this category's page. Customers swipe through all the banners you add for it.</p></div>
       <p class="err-line" id="berr" role="alert"></p>`;
+    // The category list is only needed for the two "category page" choices.
+    $("#b-place", m.body).onchange = (e) => {
+      $("#b-catfield", m.body).hidden = !isCat(e.target.value);
+    };
     m.footer.innerHTML = `
       ${existing ? '<button class="btn ghost" type="button" id="del" style="color:var(--err);margin-right:auto"><i class="ti ti-trash"></i> Delete</button>' : ""}
       <button class="btn ghost" type="button" id="cancel">Close</button>
@@ -146,6 +165,13 @@ export function render(view) {
           err.textContent = "Please choose a banner photo.";
           return;
         }
+        const place = $("#b-place", m.body).value;
+        const catId = isCat(place) ? $("#b-cat", m.body).value : "";
+        if (isCat(place) && !catId) {
+          err.textContent = "Please choose a category for this banner.";
+          return;
+        }
+        const catName = catId ? (categories.find((c) => c.id === catId) || {}).name || "" : "";
         try {
           let url = b.imageUrl;
           if (blob) {
@@ -159,7 +185,10 @@ export function render(view) {
             title: $("#b-title", m.body).value.trim(),
             subtitle: $("#b-sub", m.body).value.trim(),
             imageUrl: url,
-            placement: $("#b-place", m.body).value
+            placement: place,
+            // Only a category-page banner has a category; a banner moved back to Home gets it cleared.
+            categoryId: catId,
+            categoryName: catName
           };
           if (!existing) Object.assign(data, { bgColorHex: "#E63946", active: true, order: Date.now() });
           await setDoc(ref, data, { merge: true });
@@ -294,8 +323,22 @@ export function render(view) {
       $("#body", view).innerHTML = `<div class="empty"><i class="ti ti-alert-triangle"></i>${esc(errMsg(err))}</div>`;
     }
   );
+  // The category names for the "which category" list and for labelling category banners.
+  const unsubCats = onSnapshot(
+    collection(db, "categories"),
+    (s) => {
+      categories = s.docs
+        .map((d) => ({ ...d.data(), id: d.id }))
+        .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.name || "").localeCompare(String(b.name || "")));
+      draw();
+    },
+    () => {
+      categories = [];
+    }
+  );
   return () => {
     unsub();
+    unsubCats();
     $$(".md-ov").forEach((o) => o.remove());
     document.body.classList.remove("noscroll");
   };

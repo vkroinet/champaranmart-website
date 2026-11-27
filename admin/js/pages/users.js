@@ -1,5 +1,5 @@
 import { db, functions, collection, onSnapshot, query, where, getDocs, doc, updateDoc, httpsCallable } from "../fb.js";
-import { $, esc, money, fmtDate, modal, confirmBox, toast, errMsg } from "../ui.js";
+import { $, esc, money, fmtDate, modal, confirmBox, toast, errMsg, waLink } from "../ui.js";
 import { isUnpaidOnline } from "./dashboard.js";
 
 // The same list as "Users" in the app (Admin > Users): every customer account with its contact details, an admin-only
@@ -11,6 +11,9 @@ const NOT_PROVIDED = "Not provided";
 const SHOW_FREE_DELIVERY = false;
 // Phones write order and profile fields, so every number is forced to a plain number before it goes into HTML.
 const orderNo = (o) => {
+  // The random orderCode (it does not give away how many orders there have been); older orders keep the running number.
+  const code = String(o.orderCode || "").trim().toUpperCase();
+  if (/^[A-Z0-9]{4,12}$/.test(code)) return code;
   const n = Math.trunc(Number(o.orderNumber));
   return String(Number.isFinite(n) ? n : 0).padStart(5, "0");
 };
@@ -42,10 +45,9 @@ const needsReminder = (u, n, last, now) =>
 const wasReminded = (u) => Number(u.lastReminderAt) > 0;
 const cooldownActive = (u, now) => wasReminded(u) && now - Number(u.lastReminderAt) < COOLDOWN_DAYS * 86400000;
 const orderedAfterReminder = (u, last) => wasReminded(u) && last > Number(u.lastReminderAt);
-/** ready | off | no_app | cooldown | not_needed (joined today / ordered this week) */
+/** ready | no_app | cooldown | not_needed (joined today / ordered this week). A customer's old "offers on/off" choice is not looked at. */
 function reminderStatus(u, n, last, now) {
   if (!needsReminder(u, n, last, now)) return "not_needed";
-  if (u.offersEnabled === false) return "off";
   if (typeof u.fcmToken !== "string" || !u.fcmToken) return "no_app";
   if (cooldownActive(u, now)) return "cooldown";
   return "ready";
@@ -113,6 +115,7 @@ export function render(view) {
       .uphone{display:flex;align-items:center;gap:8px;margin-top:2px}
       .ucall{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1F7A3D;color:#fff;text-decoration:none;font-size:16px;flex:none}
       .ucall:hover{filter:brightness(1.1)}
+      .uwa{background:#25D366}
       .uact{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
       .ustats{display:flex;gap:10px;margin-bottom:14px;max-width:420px}
       .ustat{flex:1;border:1px solid var(--border);background:var(--card);border-radius:12px;padding:8px 10px;text-align:center;font-size:12px;color:var(--muted)}
@@ -120,6 +123,9 @@ export function render(view) {
       .ustat.g b{color:#1F7A3D}
       .utag.r{background:#E8EEFB;color:#2F4A8F}
       .utag.x{background:#EEEEEE;color:#5C5C5C}
+      .utagbtn{border:0;font:inherit;font-size:12px;cursor:pointer}
+      .utagbtn:hover{text-decoration:underline}
+      .utagbtn:focus-visible{outline:2px solid #8A5A00;outline-offset:2px}
       .ubar{margin-bottom:14px}
       .uprev{border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px;background:var(--surface);font-size:13px}
       @media (prefers-reduced-motion:reduce){.unew,.unew i:after{animation:none}}
@@ -230,6 +236,8 @@ export function render(view) {
         const addr = addressLine(u) || (fromOrder ? `${fromOrder.a} (from last order)` : "");
         const village = u.village ? (u.villageId === "unlisted" ? `${u.village} (not on your village list)` : u.village) : "";
         const dial = dialNo(u.phone);
+        // WhatsApp chat with a greeting already typed in (empty link = no usable number = no button).
+        const wa = waLink(u.phone, `नमस्ते ${String(u.name || "ग्राहक").trim() || "ग्राहक"} जी, चंपारण मार्ट की तरफ़ से। `);
         const st = status(u);
         // Where this customer stands with the reminder: ordered after it / reminded when / can't be notified / not reminded yet.
         let remTag = "";
@@ -242,10 +250,11 @@ export function render(view) {
             again = leftDays <= 1 ? " · can remind again tomorrow" : ` · can remind again in ${leftDays} days`;
           }
           remTag = `<span class="utag r"><i class="ti ti-bell-ringing" style="margin-right:3px"></i>Reminded ${esc(fmtLogin(Number(u.lastReminderAt)))}${again}</span>`;
-        } else if (st === "off") {
-          remTag = '<span class="utag x">Notifications off</span>';
         } else if (st === "no_app") {
           remTag = '<span class="utag x">No app installed</span>';
+        } else if (st === "ready") {
+          // Can be reminded right now: the tag itself is a button that opens the same send-reminder window as Remind.
+          remTag = `<button class="utag z utagbtn" type="button" data-remind="${esc(u.id)}" title="Send a reminder to ${esc(name)}">Not reminded yet · Tap to remind</button>`;
         } else if (st !== "not_needed") {
           remTag = '<span class="utag z">Not reminded yet</span>';
         }
@@ -255,7 +264,7 @@ export function render(view) {
             <div class="uav">${esc(name.trim().charAt(0).toUpperCase() || "?")}</div>
             <div style="min-width:0${isNew ? ";padding-right:64px" : ""}">
               <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(name)}</div>
-              <div class="uphone"><span class="hint" style="margin:0">${esc(u.phone || NOT_PROVIDED)}</span>${dial ? `<a class="ucall" href="tel:${esc(dial)}" title="Call ${esc(name)}" aria-label="Call ${esc(name)}"><i class="ti ti-phone"></i></a>` : ""}</div>
+              <div class="uphone"><span class="hint" style="margin:0">${esc(u.phone || NOT_PROVIDED)}</span>${dial ? `<a class="ucall" href="tel:${esc(dial)}" title="Call ${esc(name)}" aria-label="Call ${esc(name)}"><i class="ti ti-phone"></i></a>` : ""}${wa ? `<a class="ucall uwa" href="${esc(wa)}" target="_blank" rel="noopener" title="Message ${esc(name)} on WhatsApp" aria-label="Message ${esc(name)} on WhatsApp"><i class="ti ti-brand-whatsapp"></i></a>` : ""}</div>
             </div>
           </div>
           <div class="uline">${esc(u.email || NOT_PROVIDED)}</div>
@@ -293,14 +302,12 @@ export function render(view) {
       const lasts = lastOrderTimes();
       const left = shownUsers.filter((u) => needsReminder(u, counts.get(u.id) || 0, lasts.get(u.id) || 0, now));
       const st = (u) => reminderStatus(u, counts.get(u.id) || 0, lasts.get(u.id) || 0, now);
-      const off = left.filter((u) => st(u) === "off").length;
       const noApp = left.filter((u) => st(u) === "no_app").length;
       const cool = left.filter((u) => st(u) === "cooldown").length;
       const why = [];
-      if (off) why.push(`${off} notifications off`);
       if (noApp) why.push(`${noApp} no app installed`);
       if (cool) why.push(`${cool} reminded in the last ${COOLDOWN_DAYS} days`);
-      if (why.length) summary += ` Skipped ${off + noApp + cool}: ${why.join(", ")}.`;
+      if (why.length) summary += ` Skipped ${noApp + cool}: ${why.join(", ")}.`;
     }
 
     const m = modal({ title: "Send reminder" });

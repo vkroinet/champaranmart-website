@@ -1,7 +1,7 @@
 import {
   db, storage, storageRef, getDownloadURL, collection, query, orderBy, limit, onSnapshot, doc, updateDoc, runTransaction, increment, getDocs, where
 } from "../fb.js";
-import { $, $$, esc, money, fmtDate, modal, confirmBox, toast, errMsg, busy } from "../ui.js";
+import { $, $$, esc, money, fmtDate, modal, confirmBox, toast, errMsg, busy, waLink } from "../ui.js";
 import { isUnpaidOnline } from "./dashboard.js";
 
 const STATUS = {
@@ -18,6 +18,9 @@ const TS_FIELD = { packed: "packedAt", out_for_delivery: "outForDeliveryAt", del
 // Order fields are written by customers' phones, so anything shown as HTML must be turned into a plain
 // number (or passed through esc()) first. Never put a raw order field into a template.
 const orderNo = (o) => {
+  // The random orderCode (it does not give away how many orders there have been); older orders keep the running number.
+  const code = String(o.orderCode || "").trim().toUpperCase();
+  if (/^[A-Z0-9]{4,12}$/.test(code)) return code;
   const n = Math.trunc(Number(o.orderNumber));
   return String(Number.isFinite(n) ? n : 0).padStart(5, "0");
 };
@@ -158,7 +161,7 @@ export function render(view) {
     const rows = orders.filter(
       (o) =>
         (filter === "all" || o.status === filter) &&
-        (!q || orderNo(o).includes(q) || String(o.orderNumber).includes(q) ||
+        (!q || orderNo(o).toLowerCase().includes(q) || String(o.orderNumber).includes(q) ||
           (o.customerName || "").toLowerCase().includes(q) || (o.customerPhone || "").includes(q))
     );
     const list = $("#list", view);
@@ -205,7 +208,10 @@ export function render(view) {
         ${pickup ? '<span class="badge b-ok">Pickup</span>' : ""}
         <span class="badge b-muted">${esc(payLabel(o))}</span></div>
       <dl class="kv">
-        <dt>Customer</dt><dd>${esc(o.customerName)}${o.customerPhone ? ` · <a href="tel:${esc(o.customerPhone)}">${esc(o.customerPhone)}</a>` : ""}</dd>
+        <dt>Customer</dt><dd>${esc(o.customerName)}${o.customerPhone ? ` · <a href="tel:${esc(o.customerPhone)}">${esc(o.customerPhone)}</a>` : ""}${(() => {
+          const wa = waLink(o.customerPhone, `नमस्ते ${String(o.customerName || "").trim()} जी, चंपारण मार्ट की तरफ़ से। आपके ऑर्डर #${orderNo(o)} के बारे में: `);
+          return wa ? ` · <a href="${esc(wa)}" target="_blank" rel="noopener" style="color:#1F7A3D;font-weight:600" title="Message on WhatsApp"><i class="ti ti-brand-whatsapp"></i> WhatsApp</a>` : "";
+        })()}</dd>
         <dt>Address</dt><dd>${esc(o.address)}${Number.isFinite(Number(o.lat)) && Number(o.lat) !== 0 && Number.isFinite(Number(o.lng)) ? ` <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${Number(o.lat)},${Number(o.lng)}">Map</a>` : ""}</dd>
         <dt>Placed</dt><dd>${esc(fmtDate(o.createdAt))}</dd>
         ${o.packedAt ? `<dt>Packed</dt><dd>${esc(fmtDate(o.packedAt))}</dd>` : ""}

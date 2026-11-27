@@ -21,6 +21,9 @@ const PERIODS = [
 const STATUS = { placed: "Placed", packed: "Packed", out_for_delivery: "Out for delivery", delivered: "Delivered", cancelled: "Cancelled" };
 // Customers' phones write order fields, so the number is forced to a plain number before it goes into HTML.
 const orderNo = (o) => {
+  // The random orderCode (it does not give away how many orders there have been); older orders keep the running number.
+  const code = String(o.orderCode || "").trim().toUpperCase();
+  if (/^[A-Z0-9]{4,12}$/.test(code)) return code;
   const n = Math.trunc(Number(o.orderNumber));
   return String(Number.isFinite(n) ? n : 0).padStart(5, "0");
 };

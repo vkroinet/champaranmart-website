@@ -48,7 +48,7 @@ export function render(view) {
 
   view.innerHTML = `
     <div class="ph"><h1>Send offer</h1></div>
-    <p class="hint" style="margin:-8px 0 16px;max-width:640px">Send a notification to your customers' phones, for example for a festival deal. Customers who switched offers off in the app are skipped.</p>
+    <p class="hint" style="margin:-8px 0 16px;max-width:640px">Send a notification to your customers' phones, for example for a festival deal. It reaches every customer whose phone has the app installed.</p>
     <div class="card" style="max-width:640px;margin-bottom:18px">
       <div class="field"><label class="f" for="o-title">Title *</label><input class="in" id="o-title" maxlength="${TITLE_MAX}" placeholder="Diwali sale: 20% off on sweets" autocomplete="off">
         <div class="hint" style="text-align:right"><span id="tcount">0</span>/${TITLE_MAX}</div></div>
@@ -75,7 +75,7 @@ export function render(view) {
     <div class="list" id="hist"><div class="loading">Loading…</div></div>`;
 
   const reachCount = () =>
-    users.filter((u) => typeof u.fcmToken === "string" && u.fcmToken && u.offersEnabled !== false && (audience === "all" || picked.has(u.villageId))).length;
+    users.filter((u) => typeof u.fcmToken === "string" && u.fcmToken && (audience === "all" || picked.has(u.villageId))).length;
 
   function drawVillages() {
     const box = $("#vlist", view);
