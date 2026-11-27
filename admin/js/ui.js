@@ -113,3 +113,16 @@ export const num = (v, d = 0) => {
   const n = parseFloat(v);
   return Number.isFinite(n) ? n : d;
 };
+
+/**
+ * A WhatsApp chat link for a customer's phone number (https://wa.me/<number>?text=...). A 10-digit number gets the India
+ * code 91. Only digits ever go into the link, so a customer-written phone value can't inject anything. Returns "" if
+ * there is no usable number.
+ */
+export function waLink(phone, text = "") {
+  let d = String(phone || "").replace(/\D/g, "");
+  if (d.length === 11 && d.startsWith("0")) d = d.slice(1);
+  if (d.length === 10) d = "91" + d;
+  if (d.length < 11 || d.length > 15) return "";
+  return `https://wa.me/${d}${text ? "?text=" + encodeURIComponent(text) : ""}`;
+}
